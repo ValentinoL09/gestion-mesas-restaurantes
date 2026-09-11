@@ -88,16 +88,25 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   }
 
   async function liberarMesa(mesaId: string) {
-    const { error } = await supabase
+    // 1. Marcar peticiones como atendidas
+    const { error: errorPeticiones } = await supabase
       .from('peticiones')
-      .update({ estado: 'atendida' })
+      .update({ estado: 'atendida' }) // Respetando la nomenclatura de tu BD
       .eq('mesa_id', mesaId)
       .eq('estado', 'pendiente');
       
-    if (error) {
-      console.error("Error al liberar la mesa:", error);
+    // 2. Desactivar la sesión actual del cliente
+    const { error: errorSesion } = await supabase
+      .from('sesiones_clientes')
+      .update({ activa: false })
+      .eq('mesa_id', mesaId)
+      .eq('activa', true);
+      
+    if (errorPeticiones || errorSesion) {
+      // Usamos JSON.stringify para no enmascarar errores de Postgres
+      console.error("Error al liberar la mesa:", JSON.stringify(errorPeticiones || errorSesion, null, 2));
     } else {
-      cargarDatos(); 
+      cargarDatos(); // Refetch manual para actualizar UI
     }
   }
 
