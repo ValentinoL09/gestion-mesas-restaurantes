@@ -25,12 +25,11 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
       
       if (!mesaData) {
         setCargando(false);
-        return; // Mesa no existe
+        return; 
       }
       setMesa(mesaData);
 
       // 2. Lógica Anti-QR Fantasma (Sesiones)
-      // Usamos .limit(1) en lugar de .maybeSingle() para sobrevivir al Strict Mode de React
       const { data: sesionesActivas } = await supabase
         .from('sesiones_clientes')
         .select('id')
@@ -38,22 +37,16 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         .eq('activa', true)
         .limit(1); 
 
-      const sesionActiva = sesionesActivas?.[0]; // Tomamos la primera que encuentre
-
-      // Buscamos si este celular ya tiene un token guardado
+      const sesionActiva = sesionesActivas?.[0];
       const miToken = localStorage.getItem(`token_mesa_${id}`);
 
       if (sesionActiva) {
-        // La mesa ya está ocupada
         if (sesionActiva.id === miToken) {
-          // Es mi token, sigo adentro
           setSesionId(sesionActiva.id);
         } else {
-          // Es el token de otra persona (o no tengo token) -> Bloqueado
           setBloqueado(true);
         }
       } else {
-        // La mesa está libre, la ocupamos
         const { data: nuevaSesion, error: errorSesion } = await supabase
           .from('sesiones_clientes')
           .insert({ mesa_id: id, activa: true })
@@ -64,8 +57,6 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
           localStorage.setItem(`token_mesa_${id}`, nuevaSesion.id);
           setSesionId(nuevaSesion.id);
           await supabase.from('mesas').update({ estado: 'ocupada' }).eq('id', id);
-        } else if (errorSesion) {
-          console.error("Error creando sesión:", JSON.stringify(errorSesion, null, 2));
         }
       }
       
@@ -73,6 +64,28 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
     }
     
     inicializarMesa();
+
+    // 3. MAGIA EN VIVO: Escuchar si el mozo nos expulsa
+    const canalComensal = supabase
+      .channel(`mesa-${id}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'mesas',
+        filter: `id=eq.${id}` // Escuchamos cambios específicos en ESTA mesa
+      }, (payload) => {
+        // Si el mozo pasó la mesa a 'libre', bloqueamos la pantalla del cliente inmediatamente
+        if (payload.new.estado === 'libre') {
+          setBloqueado(true);
+          // Opcional: Borramos su token local para que no quede basura
+          localStorage.removeItem(`token_mesa_${id}`); 
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(canalComensal);
+    };
   }, [id]);
 
   async function enviarPeticion(tipo: 'llamar_mozo' | 'pedir_cuenta') {

@@ -6,6 +6,7 @@ import { supabase } from '../../../src/lib/supabase';
 interface Mesa {
   id: string;
   numero: number;
+  estado: string; // Agregamos el estado de la mesa
 }
 
 interface Peticion {
@@ -25,16 +26,16 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   const [horaActual, setHoraActual] = useState(new Date());
 
   const cargarDatos = useCallback(async () => {
-    // 1. Buscar mesas
+    // 1. Buscar mesas (Ahora también pedimos la columna 'estado')
     const { data: mesasData } = await supabase
       .from('mesas')
-      .select('id, numero')
+      .select('id, numero, estado')
       .eq('restaurante_id', restauranteID)
       .order('numero');
     
     if (mesasData) setMesas(mesasData);
 
-    // 2. Buscar peticiones pendientes (¡Corregido a creado_en!)
+    // 2. Buscar peticiones pendientes
     const { data: peticionesData, error } = await supabase
       .from('peticiones')
       .select('*')
@@ -53,6 +54,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
 
     const intervaloReloj = setInterval(() => setHoraActual(new Date()), 60000);
 
+    // 3. Magia en Vivo: Escuchamos peticiones Y el estado de las mesas
     const canal = supabase
       .channel('control-mesas')
       .on('postgres_changes', { 
@@ -66,6 +68,14 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
         }
         cargarDatos();
       })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'mesas',
+        filter: `restaurante_id=eq.${restauranteID}` // Escuchamos cuando la mesa cambia a ocupada/libre
+      }, () => {
+        cargarDatos();
+      })
       .subscribe();
 
     return () => {
@@ -77,37 +87,26 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   async function marcarAtendido(peticionId: string) {
     const { error } = await supabase
       .from('peticiones')
-      .update({ estado: 'atendida' })
+      .update({ estado: 'atendida' }) 
       .eq('id', peticionId);
       
-    if (error) {
-      console.error("Error al marcar como atendido:", error);
-    } else {
-      cargarDatos(); 
-    }
+    if (error) console.error("Error al marcar como atendido:", error);
+    else cargarDatos(); 
   }
 
+  // EL NUEVO BOTÓN: Limpia Peticiones + Cierra Sesiones + Libera Mesa
   async function liberarMesa(mesaId: string) {
-    // 1. Marcar peticiones como atendidas
-    const { error: errorPeticiones } = await supabase
-      .from('peticiones')
-      .update({ estado: 'atendida' }) // Respetando la nomenclatura de tu BD
-      .eq('mesa_id', mesaId)
-      .eq('estado', 'pendiente');
+    // 1. Limpiamos peticiones
+    await supabase.from('peticiones').update({ estado: 'atendida' }).eq('mesa_id', mesaId).eq('estado', 'pendiente');
+    
+    // 2. Desactivamos las sesiones (Expulsamos a los usuarios de sus QRs)
+    await supabase.from('sesiones_clientes').update({ activa: false }).eq('mesa_id', mesaId).eq('activa', true);
+
+    // 3. Pasamos la mesa a estado 'libre'
+    const { error } = await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId);
       
-    // 2. Desactivar la sesión actual del cliente
-    const { error: errorSesion } = await supabase
-      .from('sesiones_clientes')
-      .update({ activa: false })
-      .eq('mesa_id', mesaId)
-      .eq('activa', true);
-      
-    if (errorPeticiones || errorSesion) {
-      // Usamos JSON.stringify para no enmascarar errores de Postgres
-      console.error("Error al liberar la mesa:", JSON.stringify(errorPeticiones || errorSesion, null, 2));
-    } else {
-      cargarDatos(); // Refetch manual para actualizar UI
-    }
+    if (error) console.error("Error al liberar la mesa:", error);
+    else cargarDatos(); 
   }
 
   const minutosTranscurridos = (fechaIso: string) => {
@@ -164,6 +163,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
             const pideCuenta = pedidosMesa.some(p => p.tipo === 'pedir_cuenta');
             const llamaMozo = pedidosMesa.some(p => p.tipo === 'llamar_mozo');
             
+            // Colores basados en pedidos O en estado de ocupación
             let colorFondo = 'bg-white border-gray-200';
             let animacion = '';
             
@@ -173,6 +173,9 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
             } else if (llamaMozo) {
               colorFondo = 'bg-yellow-100 border-yellow-400';
               animacion = 'animate-pulse';
+            } else if (mesa.estado === 'ocupada') {
+              // Si la mesa está ocupada pero no llamaron al mozo, se ve grisácea
+              colorFondo = 'bg-gray-200 border-gray-400 shadow-inner';
             }
 
             return (
@@ -185,13 +188,16 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
                     {pideCuenta && <span className="text-xl" title="Pidiendo cuenta">💳</span>}
                   </div>
                 ) : (
-                  <span className="text-sm text-gray-400">Libre</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    {mesa.estado === 'ocupada' ? 'Ocupada' : 'Libre'}
+                  </span>
                 )}
 
+                {/* Botón de Liberar (Visible si está libre u ocupada sin alertas críticas) */}
                 {pedidosMesa.length === 0 && (
                   <button 
                     onClick={() => liberarMesa(mesa.id)}
-                    className="absolute bottom-2 text-xs text-gray-400 hover:text-gray-700 underline"
+                    className="absolute bottom-2 text-xs text-gray-500 hover:text-gray-900 hover:font-bold underline transition-all"
                   >
                     Liberar
                   </button>
