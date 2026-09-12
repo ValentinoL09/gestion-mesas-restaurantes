@@ -39,9 +39,11 @@ export default function LandingPage() {
               Gestión de mesas por QR
             </p>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
-              Restaurantes que no
+              Adiós a las esperas.
               <br />
-              hacen esperar.
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400">
+                Hola a las mesas inteligentes.
+              </span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
               {NOMBRE_PRODUCTO} conecta cada mesa con tu equipo: el comensal escanea el QR, llama al mozo
@@ -81,7 +83,7 @@ export default function LandingPage() {
                 <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
                   <div>
                     <p className="text-2xl font-extrabold text-white">04</p>
-                    <p className="text-xs text-gray-400">piden el mozo</p>
+                    <p className="text-xs text-gray-400">piden al mozo</p>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                 </div>
@@ -167,7 +169,7 @@ export default function LandingPage() {
             {[
               { t: 'Panel en tiempo real', d: 'Dashboard simple con el estado de cada mesa al momento.' },
               { t: 'Infraestructura Realtime', d: 'Notificaciones instantáneas sin recargas ni demoras.' },
-              { t: 'QR estáticos', d: 'Imprimos una vez y funcionan para siempre. Sin vinculaciones.' },
+              { t: 'QR estáticos', d: 'Imprimís una vez y funcionan para siempre. Sin vinculaciones.' },
               { t: 'Puesta en marcha', d: 'Te entregamos el sistema configurado con tu identidad.' },
             ].map((f) => (
               <div key={f.t} className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
@@ -188,45 +190,50 @@ export default function LandingPage() {
               Cada restaurante es distinto. Armamos la propuesta con la cantidad de mesas y el volumen de tu local.
             </p>
             <div className="grid md:grid-cols-2 gap-8 text-left">
-              <div className="bg-white text-gray-900 p-8 rounded-3xl shadow-sm">
-                <h3 className="text-2xl font-bold">Instalación y puesta en marcha</h3>
-                <p className="mt-4 text-gray-500">
-                  Todo lo necesario para dejar tu salón operando el primer día.
-                </p>
-                <ul className="mt-8 space-y-4 text-gray-700 font-medium">
-                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Alta de mesas en el sistema</li>
-                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> QRs físicos para cada mesa</li>
-                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Configuración con tu marca</li>
-                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Capacitación al personal</li>
-                </ul>
-                <a
-                  href="#contacto"
-                  className="mt-8 w-full py-3 inline-flex justify-center font-bold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
-                >
-                  Consultar instalación
-                </a>
-              </div>
               <div className="bg-gray-900 p-8 rounded-3xl border border-gray-700 relative">
                 <div className="absolute top-0 right-6 -translate-y-1/2">
                   <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold tracking-wide">
-                    PLAN MENSUAL
+                    PLAN COMPLETO
                   </span>
                 </div>
-                <h3 className="text-2xl font-bold text-white">Mantenimiento del sistema</h3>
+                <h3 className="text-2xl font-bold text-white">Instalación + mantenimiento mensual</h3>
                 <p className="mt-4 text-gray-400">
-                  Tu salón operando en la nube con soporte y mejoras continias.
+                  Un único plan: un pago inicial de instalación y un mantenimiento mensual para operar en la nube.
+                  No se contratan por separado.
                 </p>
                 <ul className="mt-8 space-y-4 text-gray-200 font-medium">
-                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Panel en tiempo real</li>
-                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Alojamiento protegido</li>
-                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Soporte prioritario</li>
-                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Mejoras continuas</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Alta de mesas y QRs físicos para cada mesa</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Configuración con tu marca</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Capacitación al personal</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Panel en tiempo real, hosting protegido y soporte</li>
                 </ul>
                 <a
                   href="#contacto"
                   className="mt-8 w-full py-3 inline-flex justify-center font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors"
                 >
-                  Consultar plan
+                  Consultar presupuesto
+                </a>
+              </div>
+              <div className="bg-white text-gray-900 p-8 rounded-3xl shadow-sm relative">
+                <div className="absolute top-0 right-6 -translate-y-1/2">
+                  <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold tracking-wide">
+                    14 DÍAS GRATIS
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold">Prueba SmartTable</h3>
+                <p className="mt-4 text-gray-500">
+                  Probá el sistema completo en tu salón durante 14 días, sin costo y sin compromiso.
+                </p>
+                <ul className="mt-8 space-y-4 text-gray-700 font-medium">
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Todas las funciones del plan completo</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Sin tarjeta ni datos de pago</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Asistencia en la puesta en marcha</li>
+                </ul>
+                <a
+                  href="#contacto"
+                  className="mt-8 w-full py-3 inline-flex justify-center font-bold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
+                >
+                  Solicitar prueba
                 </a>
               </div>
             </div>
