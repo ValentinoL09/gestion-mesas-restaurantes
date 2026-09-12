@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
 import NavDashboard from '../_nav';
+import { useTema } from '../_tema';
 import { urlMesaQR } from '../../../../src/lib/utils';
 import type { Tables } from '../../../../src/lib/database.types';
 import { QRCodeSVG } from 'qrcode.react';
@@ -13,6 +14,7 @@ type Mesa = Tables<'mesas'>;
 export default function GeneradorQRs({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
   const { verificando } = useProtegerRestaurante(restauranteID);
+  const tema = useTema();
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [cargando, setCargando] = useState(true);
   const [urlBase] = useState(() =>
@@ -103,13 +105,13 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
         <div className="space-x-4">
           <button 
             onClick={agregarMesa}
-            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            className="px-6 py-3 bg-[var(--t-primario)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-sm"
           >
             + Agregar Mesa {mesas.length > 0 ? Math.max(...mesas.map(m => m.numero)) + 1 : 1}
           </button>
           <button 
             onClick={() => window.print()}
-            className="px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors shadow-sm"
+            className="px-6 py-3 bg-[var(--t-secundario)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-sm"
           >
             🖨️ Imprimir QRs
           </button>
@@ -134,7 +136,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
           <button
             onClick={guardarUrlCarta}
             disabled={guardandoCarta}
-            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+            className="px-6 py-3 bg-[var(--t-secundario)] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:bg-gray-400"
           >
             {guardandoCarta ? 'Guardando...' : 'Guardar'}
           </button>
@@ -149,6 +151,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
           
           return (
             <div key={mesa.id} className="bg-white p-6 rounded-2xl border-2 border-gray-200 flex flex-col items-center text-center shadow-sm break-inside-avoid print:shadow-none print:border-gray-400">
+              <h2 className="text-xs font-bold tracking-widest text-[var(--t-primario)] uppercase mb-1">{tema.nombre}</h2>
               <h2 className="text-3xl font-black text-gray-800 mb-4">MESA {mesa.numero}</h2>
               
               <div className="bg-white p-2 rounded-xl border border-gray-100 mb-4">
