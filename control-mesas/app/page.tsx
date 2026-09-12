@@ -11,8 +11,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gray-950 font-sans text-gray-100 selection:bg-blue-600/40">
       {/* Navegación */}
       <nav className="flex justify-between items-center px-6 py-5 max-w-7xl mx-auto">
-        <Link href="/" className="flex items-center gap-3">
-          <Image src="/logo.jpg" alt="SmartTable" width={40} height={40} className="rounded-lg object-contain" priority />
+        <Link href="/" className="flex items-center gap-4">
+          <Image src="/logo.jpg" alt="SmartTable" width={64} height={64} className="rounded-xl object-contain" priority />
           <span className="text-2xl font-black tracking-tight text-white">
             Smart<span className="text-blue-500">Table</span>
           </span>
