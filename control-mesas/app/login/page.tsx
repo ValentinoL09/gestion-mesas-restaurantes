@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -35,9 +36,15 @@ export default function Login() {
       .eq('usuario_id', authData.user.id)
       .single();
 
-    if (restError || !restaurante) {
-      setError('No tienes un restaurante asignado a esta cuenta.');
+    if (restError) {
+      setError('Ocurrió un error al cargar tu restaurante.');
       setCargando(false);
+      return;
+    }
+
+    if (!restaurante) {
+      // La cuenta existe pero todavía no tiene restaurante: ir al onboarding.
+      router.push('/configurar-restaurante');
       return;
     }
 
@@ -54,8 +61,9 @@ export default function Login() {
         
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <label htmlFor="emailLogin" className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
             <input 
+              id="emailLogin"
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -65,8 +73,9 @@ export default function Login() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label htmlFor="passwordLogin" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <input 
+              id="passwordLogin"
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -83,6 +92,18 @@ export default function Login() {
             {cargando ? 'Verificando...' : 'Iniciar Sesión'}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-gray-500">
+          ¿No tenés una cuenta?{' '}
+          <Link href="/registro" className="text-blue-600 hover:underline font-medium">
+            Crear cuenta
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-gray-500">
+          <Link href="/reset-password" className="text-blue-600 hover:underline font-medium">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
       </div>
     </main>
   );

@@ -1,9 +1,10 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { supabase } from '../../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
+import NavDashboard from '../_nav';
+import { urlMesaQR } from '../../../../src/lib/utils';
 import type { Tables } from '../../../../src/lib/database.types';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -89,16 +90,15 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
   if (cargando) return <div className="p-10 text-center">Cargando QRs...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 font-sans">
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <NavDashboard restauranteID={restauranteID} actual="qrs" />
+      <div className="p-8">
       
       {/* Controles (Ocultos al imprimir) */}
       <div className="print:hidden max-w-4xl mx-auto mb-10 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
         <div>
-          <Link href={`/dashboard/${restauranteID}`} className="text-sm text-gray-500 hover:text-gray-800 transition-colors">
-            ← Volver al Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-800 mt-1">Generador de QRs</h1>
-          <p className="text-gray-500 text-sm">Crea nuevas mesas o imprime la hoja (Ctrl + P).</p>
+          <h1 className="text-2xl font-bold text-gray-800">Generador de QRs</h1>
+          <p className="text-gray-500 text-sm mt-1">Crea nuevas mesas o imprime la hoja (Ctrl + P).</p>
         </div>
         <div className="space-x-4">
           <button 
@@ -145,7 +145,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
       {/* Grilla de QRs (Optimizada para impresión) */}
       <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-8">
         {mesas.map((mesa) => {
-          const urlQR = `${urlBase}/m/${mesa.id}`;
+          const urlQR = urlMesaQR(urlBase, mesa.id);
           
           return (
             <div key={mesa.id} className="bg-white p-6 rounded-2xl border-2 border-gray-200 flex flex-col items-center text-center shadow-sm break-inside-avoid print:shadow-none print:border-gray-400">
@@ -161,6 +161,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

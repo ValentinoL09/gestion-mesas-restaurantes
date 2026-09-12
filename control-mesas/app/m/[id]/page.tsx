@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../src/lib/supabase';
 import type { Tables } from '../../../src/lib/database.types';
 
@@ -11,11 +11,31 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
   const [urlCarta, setUrlCarta] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState('');
-  
-  // Nuevos estados para la Fase 5
   const [bloqueado, setBloqueado] = useState(false);
+  const [tiposPendientes, setTiposPendientes] = useState<Set<string>>(new Set());
+
+  function marcarTipo(tipo: string, pendiente: boolean) {
+    setTiposPendientes((actuales) => {
+      const nuevos = new Set(actuales);
+      if (pendiente) nuevos.add(tipo);
+      else nuevos.delete(tipo);
+      return nuevos;
+    });
+  }
+
+  const cargarPeticionesPendientes = useCallback(async () => {
+    const { data } = await supabase
+      .from('peticiones')
+      .select('tipo')
+      .eq('mesa_id', id)
+      .eq('estado', 'pendiente');
+
+    if (data) setTiposPendientes(new Set(data.map((p) => p.tipo)));
+  }, [id]);
 
   useEffect(() => {
+    let vigente = true;
+
     async function inicializarMesa() {
       // 1. Buscar los datos de la mesa
       const { data: mesaData } = await supabase
@@ -41,6 +61,9 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
       if (restaurante?.url_carta) {
         setUrlCarta(restaurante.url_carta);
       }
+
+      // 1c. Peticiones vigentes: deshabilitar botones ya solicitados (anti-spam).
+      await cargarPeticionesPendientes();
 
       // 2. Lógica Anti-QR Fantasma (Sesiones)
       const { data: sesionesActivas } = await supabase
@@ -70,36 +93,51 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         }
       }
       
-      setCargando(false);
+      if (vigente) setCargando(false);
     }
     
     inicializarMesa();
 
-    // 3. MAGIA EN VIVO: Escuchar si el mozo nos expulsa
+    // 3. MAGIA EN VIVO: escuchar si el mozo nos expulsa Y si atiende peticiones
     const canalComensal = supabase
       .channel(`mesa-${id}`)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'mesas',
-        filter: `id=eq.${id}` // Escuchamos cambios específicos en ESTA mesa
+        filter: `id=eq.${id}`
       }, (payload) => {
-        // Si el mozo pasó la mesa a 'libre', bloqueamos la pantalla del cliente inmediatamente
         if (payload.new.estado === 'libre') {
           setBloqueado(true);
-          // Opcional: Borramos su token local para que no quede basura
           localStorage.removeItem(`token_mesa_${id}`); 
+        }
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'peticiones',
+        filter: `mesa_id=eq.${id}`,
+      }, (payload) => {
+        // Refrescar botones: al atenderse una petición (UPDATE/DELETE) o al
+        // crearse de nuevo (INSERT), se re-habilita o deshabilita el botón.
+        if (payload.eventType === 'INSERT') {
+          marcarTipo(payload.new.tipo, payload.new.estado === 'pendiente');
+        } else if (payload.eventType === 'UPDATE') {
+          marcarTipo(payload.new.tipo, payload.new.estado === 'pendiente');
+        } else if (payload.eventType === 'DELETE') {
+          marcarTipo(payload.old.tipo, false);
         }
       })
       .subscribe();
 
     return () => {
+      vigente = false;
       supabase.removeChannel(canalComensal);
     };
-  }, [id]);
+  }, [id, cargarPeticionesPendientes]);
 
   async function enviarPeticion(tipo: 'llamar_mozo' | 'pedir_cuenta') {
-    if (!mesa || bloqueado) return;
+    if (!mesa || bloqueado || tiposPendientes.has(tipo)) return;
     
     setMensaje('Enviando...');
 
@@ -113,8 +151,10 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
       });
 
     if (error) {
-      setMensaje('❌ Hubo un error al avisar al mozo.');
+      setMensaje('❌ Ya hay una solicitud vigente para esto.');
+      setTimeout(() => setMensaje(''), 3000);
     } else {
+      marcarTipo(tipo, true);
       setMensaje('✅ ¡Tu mozo está en camino!');
       setTimeout(() => setMensaje(''), 3000);
     }
@@ -139,6 +179,9 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
   }
 
   // PANTALLA NORMAL (Si es mi sesión)
+  const llamadoMozo = tiposPendientes.has('llamar_mozo');
+  const pedidaCuenta = tiposPendientes.has('pedir_cuenta');
+
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 font-sans">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-8 text-center">
@@ -174,16 +217,26 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
 
           <button 
             onClick={() => enviarPeticion('llamar_mozo')}
-            className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors shadow-md active:scale-95"
+            disabled={llamadoMozo}
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors shadow-md active:scale-95 disabled:active:scale-100 ${
+              llamadoMozo
+                ? 'bg-gray-200 text-gray-500 cursor-default'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
-            👋 Llamar al Mozo
+            {llamadoMozo ? '👋 Mozo avisado' : '👋 Llamar al Mozo'}
           </button>
 
           <button 
             onClick={() => enviarPeticion('pedir_cuenta')}
-            className="w-full py-4 bg-green-600 text-white rounded-xl font-semibold text-lg hover:bg-green-700 transition-colors shadow-md active:scale-95"
+            disabled={pedidaCuenta}
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors shadow-md active:scale-95 disabled:active:scale-100 ${
+              pedidaCuenta
+                ? 'bg-gray-200 text-gray-500 cursor-default'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
           >
-            💳 Pedir la Cuenta
+            {pedidaCuenta ? '💳 Cuenta pedida' : '💳 Pedir la Cuenta'}
           </button>
         </div>
 

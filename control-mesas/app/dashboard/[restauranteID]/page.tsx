@@ -4,6 +4,8 @@ import { use, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
+import NavDashboard from './_nav';
+import { minutosTranscurridos } from '../../../src/lib/utils';
 import type { Tables } from '../../../src/lib/database.types';
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
@@ -96,16 +98,13 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     else cargarDatos(); 
   }
 
-  const minutosTranscurridos = (fechaIso: string) => {
-    const dif = Math.floor((horaActual.getTime() - new Date(fechaIso).getTime()) / 60000);
-    return dif < 1 ? 'ahora' : `hace ${dif} min`;
-  };
-
   if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
   if (cargando) return <div className="p-10 text-center">Cargando tablero...</div>;
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 font-sans">
+    <div className="min-h-screen bg-gray-100 font-sans">
+      <NavDashboard restauranteID={restauranteID} actual="tablero" />
+      <div className="flex flex-col md:flex-row">
       
       <aside className="w-full md:w-1/3 lg:w-1/4 bg-white border-r border-gray-200 p-4 flex flex-col h-auto md:h-screen overflow-y-auto">
         <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Cola de Pedidos</h2>
@@ -123,7 +122,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-bold text-lg">Mesa {mesa?.numero || '?'}</span>
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {minutosTranscurridos(pet.creado_en)}
+                      {minutosTranscurridos(pet.creado_en, horaActual)}
                     </span>
                   </div>
                   <p className="font-medium text-gray-700 mb-4">
@@ -203,7 +202,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
           })}
         </div>
       </main>
-
+      </div>
     </div>
   );
 }
