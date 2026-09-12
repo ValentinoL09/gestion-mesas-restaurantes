@@ -107,25 +107,34 @@ export type Database = {
       }
       restaurantes: {
         Row: {
+          color_primario: string
+          color_secundario: string
           creado_en: string
           id: string
           link_menu: string | null
+          logo_url: string | null
           nombre: string
           url_carta: string | null
           usuario_id: string | null
         }
         Insert: {
+          color_primario?: string
+          color_secundario?: string
           creado_en?: string
           id?: string
           link_menu?: string | null
+          logo_url?: string | null
           nombre: string
           url_carta?: string | null
           usuario_id?: string | null
         }
         Update: {
+          color_primario?: string
+          color_secundario?: string
           creado_en?: string
           id?: string
           link_menu?: string | null
+          logo_url?: string | null
           nombre?: string
           url_carta?: string | null
           usuario_id?: string | null
@@ -165,15 +174,24 @@ export type Database = {
     Views: {
       restaurantes_publico: {
         Row: {
+          color_primario: string | null
+          color_secundario: string | null
           id: string | null
+          logo_url: string | null
           url_carta: string | null
         }
         Insert: {
+          color_primario?: string | null
+          color_secundario?: string | null
           id?: string | null
+          logo_url?: string | null
           url_carta?: string | null
         }
         Update: {
+          color_primario?: string | null
+          color_secundario?: string | null
           id?: string | null
+          logo_url?: string | null
           url_carta?: string | null
         }
         Relationships: []

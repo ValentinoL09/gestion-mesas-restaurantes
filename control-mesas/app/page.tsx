@@ -12,7 +12,7 @@ export default function LandingPage() {
       {/* Navegación */}
       <nav className="flex justify-between items-center px-6 py-5 max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-4">
-          <Image src="/logo.jpg" alt="SmartTable" width={64} height={64} className="rounded-xl object-contain" priority />
+          <Image src="/logo.jpg" alt="SmartTable" width={120} height={120} className="rounded-xl object-contain" priority />
           <span className="text-2xl font-black tracking-tight text-white">
             Smart<span className="text-blue-500">Table</span>
           </span>

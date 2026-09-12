@@ -130,7 +130,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
                   </p>
                   <button 
                     onClick={() => marcarAtendido(pet.id)}
-                    className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                    className="w-full py-2 bg-[var(--t-secundario)] hover:opacity-90 text-white text-sm font-semibold rounded-lg transition-opacity"
                   >
                     Marcar Atendido
                   </button>
@@ -146,7 +146,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
           <h1 className="text-3xl font-bold text-gray-800">Mapa del Local</h1>
           <Link
             href={`/dashboard/${restauranteID}/qrs`}
-            className="px-5 py-2.5 text-sm font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
+            className="px-5 py-2.5 text-sm font-semibold bg-[var(--t-primario)] text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
           >
             🔳 Generar QRs
           </Link>
