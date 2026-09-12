@@ -2,24 +2,25 @@
 
 import { use, useEffect, useState } from 'react';
 import { supabase } from '../../../src/lib/supabase';
+import type { Tables } from '../../../src/lib/database.types';
 
 export default function PantallaComensal({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   
-  const [mesa, setMesa] = useState<{ numero: number; restaurante_id: string } | null>(null);
+  const [mesa, setMesa] = useState<Tables<'mesas'> | null>(null);
+  const [urlCarta, setUrlCarta] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState('');
   
   // Nuevos estados para la Fase 5
   const [bloqueado, setBloqueado] = useState(false);
-  const [sesionId, setSesionId] = useState<string | null>(null);
 
   useEffect(() => {
     async function inicializarMesa() {
       // 1. Buscar los datos de la mesa
       const { data: mesaData } = await supabase
         .from('mesas')
-        .select('numero, restaurante_id')
+        .select('*')
         .eq('id', id)
         .single();
       
@@ -28,6 +29,18 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         return; 
       }
       setMesa(mesaData);
+
+      // 1b. Carta digital configurable: si el restaurante definió una URL,
+      // el comensal puede abrir su carta (si no, el QR es solo para mozos).
+      const { data: restaurante } = await supabase
+        .from('restaurantes_publico')
+        .select('url_carta')
+        .eq('id', mesaData.restaurante_id)
+        .single();
+
+      if (restaurante?.url_carta) {
+        setUrlCarta(restaurante.url_carta);
+      }
 
       // 2. Lógica Anti-QR Fantasma (Sesiones)
       const { data: sesionesActivas } = await supabase
@@ -41,13 +54,11 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
       const miToken = localStorage.getItem(`token_mesa_${id}`);
 
       if (sesionActiva) {
-        if (sesionActiva.id === miToken) {
-          setSesionId(sesionActiva.id);
-        } else {
+        if (sesionActiva.id !== miToken) {
           setBloqueado(true);
         }
       } else {
-        const { data: nuevaSesion, error: errorSesion } = await supabase
+        const { data: nuevaSesion } = await supabase
           .from('sesiones_clientes')
           .insert({ mesa_id: id, activa: true })
           .select('id')
@@ -55,7 +66,6 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
 
         if (nuevaSesion) {
           localStorage.setItem(`token_mesa_${id}`, nuevaSesion.id);
-          setSesionId(nuevaSesion.id);
           await supabase.from('mesas').update({ estado: 'ocupada' }).eq('id', id);
         }
       }
@@ -145,9 +155,16 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         )}
 
         <div className="space-y-4 pt-4">
-          <button className="w-full py-4 bg-gray-800 text-white rounded-xl font-semibold text-lg hover:bg-gray-700 transition-colors shadow-md">
-            📖 Ver Carta Digital
-          </button>
+          {urlCarta && (
+            <a
+              href={urlCarta}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-4 bg-gray-800 text-white rounded-xl font-semibold text-lg hover:bg-gray-700 transition-colors shadow-md"
+            >
+              📖 Ver Carta Digital
+            </a>
+          )}
           
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-gray-200"></div>
