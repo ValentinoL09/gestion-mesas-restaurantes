@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { supabase } from '../../../src/lib/supabase';
 
 interface Mesa {
@@ -155,7 +156,15 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
       </aside>
 
       <main className="flex-1 p-6 md:p-10 bg-gray-50 h-auto md:h-screen overflow-y-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Mapa del Local</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Mapa del Local</h1>
+          <Link
+            href={`/dashboard/${restauranteID}/qrs`}
+            className="px-5 py-2.5 text-sm font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
+          >
+            🔳 Generar QRs
+          </Link>
+        </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {mesas.map(mesa => {

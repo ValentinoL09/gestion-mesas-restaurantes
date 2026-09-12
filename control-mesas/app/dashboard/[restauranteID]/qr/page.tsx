@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '../../../../src/lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -55,7 +56,10 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
       {/* Controles (Ocultos al imprimir) */}
       <div className="print:hidden max-w-4xl mx-auto mb-10 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Generador de QRs</h1>
+          <Link href={`/dashboard/${restauranteID}`} className="text-sm text-gray-500 hover:text-gray-800 transition-colors">
+            ← Volver al Dashboard
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-800 mt-1">Generador de QRs</h1>
           <p className="text-gray-500 text-sm">Crea nuevas mesas o imprime la hoja (Ctrl + P).</p>
         </div>
         <div className="space-x-4">
