@@ -72,6 +72,71 @@ export default function LandingPage() {
           </div>
 
         </div>
+
+        {/* Sección de Precios */}
+        <div className="mt-32 max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-6">Planes transparentes, sin sorpresas</h2>
+          <p className="text-xl text-gray-500 mb-12">Paga una única vez por la instalación física y una tarifa plana mensual por el software.</p>
+          
+          <div className="grid md:grid-cols-2 gap-8 text-left">
+            
+            {/* Plan de Instalación */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200">
+              <h3 className="text-2xl font-bold text-gray-900">Instalación y Alta</h3>
+              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-gray-900">
+                $150
+                <span className="ml-2 text-xl font-medium text-gray-500">/pago único</span>
+              </div>
+              <p className="mt-4 text-gray-500">Setup completo en tu local para que empieces a operar sin fricciones.</p>
+              <ul className="mt-8 space-y-4 text-gray-700 font-medium">
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-600 text-xl">✔</span> Configuración de identidad visual
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-600 text-xl">✔</span> Alta de mesas en la base de datos
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-600 text-xl">✔</span> QRs físicos entregados en acrílico
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-600 text-xl">✔</span> Capacitación presencial al personal
+                </li>
+              </ul>
+            </div>
+
+            {/* Plan Mensual */}
+            <div className="bg-gray-900 p-8 rounded-3xl shadow-xl border border-gray-800 text-white relative">
+              <div className="absolute top-0 right-6 transform -translate-y-1/2">
+                <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold tracking-wide shadow-lg">14 DÍAS GRATIS</span>
+              </div>
+              <h3 className="text-2xl font-bold">Mantenimiento del Sistema</h3>
+              <div className="mt-4 flex items-baseline text-5xl font-extrabold">
+                $40
+                <span className="ml-2 text-xl font-medium text-gray-400">/mes</span>
+              </div>
+              <p className="mt-4 text-gray-400">Todo lo necesario para mantener tus mesas operando al máximo nivel en la nube.</p>
+              <ul className="mt-8 space-y-4 font-medium text-gray-200">
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-400 text-xl">✔</span> Acceso al Dashboard en tiempo real
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-400 text-xl">✔</span> Alojamiento de datos seguro
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-400 text-xl">✔</span> Soporte técnico prioritario
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="text-blue-400 text-xl">✔</span> Mantenimiento y mejoras continuas
+                </li>
+              </ul>
+              <button className="mt-8 w-full py-4 text-lg font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/30">
+                Iniciar Prueba Gratuita
+              </button>
+            </div>
+
+          </div>
+        </div>
+        
       </main>
 
     </div>
