@@ -16,9 +16,12 @@ export default function LandingPage() {
           >
             Acceso Clientes
           </Link>
-          <button className="px-5 py-2.5 text-sm font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors shadow-sm hidden sm:block">
+          <Link
+            href="/registro"
+            className="px-5 py-2.5 text-sm font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors shadow-sm hidden sm:block"
+          >
             Registrar mi local
-          </button>
+          </Link>
         </div>
       </nav>
 
@@ -36,9 +39,9 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="px-8 py-4 text-lg font-bold bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 hover:-translate-y-1">
+          <Link href="/registro" className="px-8 py-4 text-lg font-bold bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 hover:-translate-y-1">
             Empieza Gratis Hoy
-          </button>
+          </Link>
           <button className="px-8 py-4 text-lg font-bold bg-white text-gray-800 rounded-2xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all shadow-sm">
             Ver Demo Interactiva
           </button>
@@ -129,9 +132,9 @@ export default function LandingPage() {
                   <span className="text-blue-400 text-xl">✔</span> Mantenimiento y mejoras continuas
                 </li>
               </ul>
-              <button className="mt-8 w-full py-4 text-lg font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/30">
+              <Link href="/registro" className="mt-8 w-full py-4 text-lg font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/30">
                 Iniciar Prueba Gratuita
-              </button>
+              </Link>
             </div>
 
           </div>
