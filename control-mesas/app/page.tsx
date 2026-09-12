@@ -198,8 +198,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-white">Instalación + mantenimiento mensual</h3>
                 <p className="mt-4 text-gray-400">
-                  Un único plan: un pago inicial de instalación y un mantenimiento mensual para operar en la nube.
-                  No se contratan por separado.
+                  Un pago inicial de instalación y un mantenimiento mensual para operar en la nube.
                 </p>
                 <ul className="mt-8 space-y-4 text-gray-200 font-medium">
                   <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Alta de mesas y QRs físicos para cada mesa</li>
