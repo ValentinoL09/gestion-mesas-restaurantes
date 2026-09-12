@@ -1,147 +1,277 @@
+import Image from 'next/image';
 import Link from 'next/link';
+import FormContacto from './_components/FormContacto';
+import { EMAIL_COMERCIAL, NOMBRE_PRODUCTO } from '../src/lib/contacto';
+
+const pasoClaseIcono =
+  'w-12 h-12 bg-blue-600/10 text-blue-400 rounded-xl flex items-center justify-center text-xl font-black';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-blue-200">
-      
+    <div className="min-h-screen bg-gray-950 font-sans text-gray-100 selection:bg-blue-600/40">
       {/* Navegación */}
-      <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <div className="text-2xl font-black tracking-tighter text-gray-900">
-          Smart<span className="text-blue-600">Table</span>
-        </div>
-        <div className="flex gap-4">
-          <Link 
-            href="/login" 
-            className="px-5 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+      <nav className="flex justify-between items-center px-6 py-5 max-w-7xl mx-auto">
+        <Link href="/" className="flex items-center gap-3">
+          <Image src="/logo.jpg" alt="SmartTable" width={40} height={40} className="rounded-lg object-contain" priority />
+          <span className="text-2xl font-black tracking-tight text-white">
+            Smart<span className="text-blue-500">Table</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <a href="#contacto" className="text-sm font-semibold text-gray-300 hover:text-white transition-colors">
+            Contacto
+          </a>
+          <a
+            href="#contacto"
+            className="px-5 py-2.5 text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors shadow-sm"
           >
-            Acceso Clientes
-          </Link>
-          <Link
-            href="/registro"
-            className="px-5 py-2.5 text-sm font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors shadow-sm hidden sm:block"
-          >
-            Registrar mi local
-          </Link>
+            Solicitar Demo
+          </a>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-6 pt-20 pb-24 text-center lg:pt-32">
-        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 mb-6">
-          Adiós a las esperas.<br className="hidden sm:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
-            Hola a las mesas inteligentes.
-          </span>
-        </h1>
-        
-        <p className="mt-6 text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-          El sistema de gestión por QR que permite a tus comensales llamar al mozo, pedir la cuenta y ver el menú en segundos, sin descargar ninguna aplicación.
-        </p>
-
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/registro" className="px-8 py-4 text-lg font-bold bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200 hover:-translate-y-1">
-            Empieza Gratis Hoy
-          </Link>
-          <button className="px-8 py-4 text-lg font-bold bg-white text-gray-800 rounded-2xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all shadow-sm">
-            Ver Demo Interactiva
-          </button>
-        </div>
-
-        {/* Sección de Beneficios */}
-        <div className="mt-32 grid md:grid-cols-3 gap-10 text-left">
-          
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6">
-              🚀
+      <main>
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.18),transparent_55%)] pointer-events-none" />
+          <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-20 text-center lg:pt-24">
+            <p className="text-xs font-bold tracking-[0.25em] text-blue-500 uppercase mb-5">
+              Gestión de mesas por QR
+            </p>
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+              Restaurantes que no
+              <br />
+              hacen esperar.
+            </h1>
+            <p className="mt-6 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              {NOMBRE_PRODUCTO} conecta cada mesa con tu equipo: el comensal escanea el QR, llama al mozo
+              y pide la cuenta al instante. Vos lo ves en tiempo real desde un panel simple. Nadie instala nada.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="#contacto"
+                className="px-8 py-4 text-lg font-bold bg-blue-600 text-white rounded-2xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/25 hover:-translate-y-1"
+              >
+                Solicitar Demo
+              </a>
+              <a
+                href="#como-funciona"
+                className="px-8 py-4 text-lg font-bold bg-transparent text-gray-100 rounded-2xl border border-gray-700 hover:border-gray-500 transition-all"
+              >
+                Ver cómo funciona
+              </a>
             </div>
-            <h3 className="text-xl font-bold mb-3">Servicio Inmediato</h3>
-            <p className="text-gray-500">Tus clientes piden lo que necesitan al instante. El mozo recibe la alerta en tiempo real en su panel.</p>
-          </div>
 
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6">
-              🎨
-            </div>
-            <h3 className="text-xl font-bold mb-3">Tu Propia Marca</h3>
-            <p className="text-gray-500">Personaliza la vista del cliente con tu logotipo y los colores de tu restaurante. Hazlo sentir en casa.</p>
-          </div>
-
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6">
-              📈
-            </div>
-            <h3 className="text-xl font-bold mb-3">Más Rotación</h3>
-            <p className="text-gray-500">Al agilizar el momento de pedir la cuenta, las mesas se liberan más rápido, aumentando tus ingresos diarios.</p>
-          </div>
-
-        </div>
-
-        {/* Sección de Precios */}
-        <div className="mt-32 max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-6">Planes transparentes, sin sorpresas</h2>
-          <p className="text-xl text-gray-500 mb-12">Paga una única vez por la instalación física y una tarifa plana mensual por el software.</p>
-          
-          <div className="grid md:grid-cols-2 gap-8 text-left">
-            
-            {/* Plan de Instalación */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900">Instalación y Alta</h3>
-              <div className="mt-4 flex items-baseline text-5xl font-extrabold text-gray-900">
-                $150
-                <span className="ml-2 text-xl font-medium text-gray-500">/pago único</span>
+            {/* Mock del panel */}
+            <div className="mt-16 max-w-3xl mx-auto rounded-2xl border border-gray-800 bg-gray-900/70 backdrop-blur p-6 text-left shadow-2xl">
+              <div className="flex items-center gap-2 mb-5">
+                <span className="w-3 h-3 rounded-full bg-red-500/70" />
+                <span className="w-3 h-3 rounded-full bg-yellow-500/70" />
+                <span className="w-3 h-3 rounded-full bg-green-500/70" />
+                <span className="ml-3 text-sm text-gray-400">Panel del local · en tiempo real</span>
               </div>
-              <p className="mt-4 text-gray-500">Setup completo en tu local para que empieces a operar sin fricciones.</p>
-              <ul className="mt-8 space-y-4 text-gray-700 font-medium">
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-600 text-xl">✔</span> Configuración de identidad visual
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-600 text-xl">✔</span> Alta de mesas en la base de datos
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-600 text-xl">✔</span> QRs físicos entregados en acrílico
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-600 text-xl">✔</span> Capacitación presencial al personal
-                </li>
-              </ul>
-            </div>
-
-            {/* Plan Mensual */}
-            <div className="bg-gray-900 p-8 rounded-3xl shadow-xl border border-gray-800 text-white relative">
-              <div className="absolute top-0 right-6 transform -translate-y-1/2">
-                <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold tracking-wide shadow-lg">14 DÍAS GRATIS</span>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-extrabold text-white">12</p>
+                    <p className="text-xs text-gray-400">mesas activas</p>
+                  </div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                </div>
+                <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-extrabold text-white">04</p>
+                    <p className="text-xs text-gray-400">piden el mozo</p>
+                  </div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                </div>
+                <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-extrabold text-white">02</p>
+                    <p className="text-xs text-gray-400">piden la cuenta</p>
+                  </div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                </div>
               </div>
-              <h3 className="text-2xl font-bold">Mantenimiento del Sistema</h3>
-              <div className="mt-4 flex items-baseline text-5xl font-extrabold">
-                $40
-                <span className="ml-2 text-xl font-medium text-gray-400">/mes</span>
+              <div className="mt-4 rounded-xl bg-blue-600/10 border border-blue-600/20 px-4 py-3 text-sm text-blue-300">
+                Alerta entrante: Mesa 7 → Llamar al mozo
               </div>
-              <p className="mt-4 text-gray-400">Todo lo necesario para mantener tus mesas operando al máximo nivel en la nube.</p>
-              <ul className="mt-8 space-y-4 font-medium text-gray-200">
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-400 text-xl">✔</span> Acceso al Dashboard en tiempo real
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-400 text-xl">✔</span> Alojamiento de datos seguro
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-400 text-xl">✔</span> Soporte técnico prioritario
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-blue-400 text-xl">✔</span> Mantenimiento y mejoras continuas
-                </li>
-              </ul>
-              <Link href="/registro" className="mt-8 w-full py-4 text-lg font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-600/30">
-                Iniciar Prueba Gratuita
-              </Link>
             </div>
-
           </div>
-        </div>
-        
+        </section>
+
+        {/* Cómo funciona */}
+        <section id="como-funciona" className="max-w-7xl mx-auto px-6 py-20 scroll-mt-8">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Cómo funciona</h2>
+          <p className="text-lg text-gray-400 mb-12">Cuatro pasos, cero fricción para tus clientes.</p>
+          <div className="grid md:grid-cols-4 gap-6 text-left">
+            {[
+              { n: '1', t: 'El QR en cada mesa', d: 'Cada mesa lleva su propio QR. Una vez colocado, funciona siempre.' },
+              { n: '2', t: 'El comensal escanea', d: 'Se abre la pantalla de tu restaurante al instante, sin descargar nada.' },
+              { n: '3', t: 'Llega la alerta', d: '“Llamar al mozo” o “Pedir la cuenta” aparece en el panel en tiempo real.' },
+              { n: '4', t: 'Atendés y liberás', d: 'Al atender la mesa, el sistema queda listo para el próximo servicio.' },
+            ].map((paso) => (
+              <div key={paso.n} className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
+                <div className={pasoClaseIcono}>{paso.n}</div>
+                <h3 className="mt-5 text-lg font-bold text-white">{paso.t}</h3>
+                <p className="mt-2 text-sm text-gray-400 leading-relaxed">{paso.d}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Beneficios */}
+        <section className="border-y border-gray-800 bg-white text-gray-900">
+          <div className="max-w-7xl mx-auto px-6 py-20">
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-12">Por qué elegir SmartTable</h2>
+            <div className="grid md:grid-cols-2 gap-8 text-left">
+              {[
+                {
+                  t: 'Sin apps ni registros',
+                  d: 'El comensal solo escanea el QR. Nada de instalar, crear cuentas ni descargar nada.',
+                },
+                {
+                  t: 'Avisos en tiempo real',
+                  d: 'Cada llamada o pedido de cuenta llega al instante al panel. Ningún cliente espera de más.',
+                },
+                {
+                  t: 'Tu marca en cada pantalla',
+                  d: 'La vista del comensal lleva tu logo y tus colores: se siente como parte de tu restaurante.',
+                },
+                {
+                  t: 'Más rotación, más ingresos',
+                  d: 'Menos esperas para pedir la cuenta significa mesas que se liberan antes y facturan más.',
+                },
+              ].map((b) => (
+                <div key={b.t} className="flex gap-5">
+                  <div className="w-12 h-12 shrink-0 bg-blue-600 text-white rounded-xl flex items-center justify-center text-xl font-black">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">{b.t}</h3>
+                    <p className="mt-2 text-gray-500 leading-relaxed">{b.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Producto */}
+        <section className="max-w-7xl mx-auto px-6 py-20">
+          <p className="text-xs font-bold tracking-[0.25em] text-blue-500 uppercase mb-5">Pensado como producto</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-12">
+            Construido para operar, no para demos
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+            {[
+              { t: 'Panel en tiempo real', d: 'Dashboard simple con el estado de cada mesa al momento.' },
+              { t: 'Infraestructura Realtime', d: 'Notificaciones instantáneas sin recargas ni demoras.' },
+              { t: 'QR estáticos', d: 'Imprimos una vez y funcionan para siempre. Sin vinculaciones.' },
+              { t: 'Puesta en marcha', d: 'Te entregamos el sistema configurado con tu identidad.' },
+            ].map((f) => (
+              <div key={f.t} className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+                <h3 className="font-bold text-white">{f.t}</h3>
+                <p className="mt-2 text-sm text-gray-400 leading-relaxed">{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Precios */}
+        <section className="border-y border-gray-800 bg-gray-900/40">
+          <div className="max-w-5xl mx-auto px-6 py-20">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6">
+              Planes a medida de tu salón
+            </h2>
+            <p className="text-lg text-gray-400 mb-12">
+              Cada restaurante es distinto. Armamos la propuesta con la cantidad de mesas y el volumen de tu local.
+            </p>
+            <div className="grid md:grid-cols-2 gap-8 text-left">
+              <div className="bg-white text-gray-900 p-8 rounded-3xl shadow-sm">
+                <h3 className="text-2xl font-bold">Instalación y puesta en marcha</h3>
+                <p className="mt-4 text-gray-500">
+                  Todo lo necesario para dejar tu salón operando el primer día.
+                </p>
+                <ul className="mt-8 space-y-4 text-gray-700 font-medium">
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Alta de mesas en el sistema</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> QRs físicos para cada mesa</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Configuración con tu marca</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-600 text-xl">✔</span> Capacitación al personal</li>
+                </ul>
+                <a
+                  href="#contacto"
+                  className="mt-8 w-full py-3 inline-flex justify-center font-bold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
+                >
+                  Consultar instalación
+                </a>
+              </div>
+              <div className="bg-gray-900 p-8 rounded-3xl border border-gray-700 relative">
+                <div className="absolute top-0 right-6 -translate-y-1/2">
+                  <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-bold tracking-wide">
+                    PLAN MENSUAL
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-white">Mantenimiento del sistema</h3>
+                <p className="mt-4 text-gray-400">
+                  Tu salón operando en la nube con soporte y mejoras continias.
+                </p>
+                <ul className="mt-8 space-y-4 text-gray-200 font-medium">
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Panel en tiempo real</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Alojamiento protegido</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Soporte prioritario</li>
+                  <li className="flex items-center gap-3"><span className="text-blue-400 text-xl">✔</span> Mejoras continuas</li>
+                </ul>
+                <a
+                  href="#contacto"
+                  className="mt-8 w-full py-3 inline-flex justify-center font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors"
+                >
+                  Consultar plan
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Contacto */}
+        <section id="contacto" className="max-w-7xl mx-auto px-6 py-20 scroll-mt-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">
+                Hablemos de tu restaurante
+              </h2>
+              <p className="text-lg text-gray-400 leading-relaxed mb-8">
+                Contanos cuántas mesas tenés y cómo trabaja tu salón hoy. Te armamos una propuesta
+                a medida con el costo de instalación y el plan mensual.
+              </p>
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
+                <p className="text-sm text-gray-400 mb-2">Prefieres escribirnos directo?</p>
+                <a
+                  href={`mailto:${EMAIL_COMERCIAL}`}
+                  className="text-xl font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  {EMAIL_COMERCIAL}
+                </a>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-gray-800 bg-gray-900 p-8">
+              <FormContacto />
+            </div>
+          </div>
+        </section>
       </main>
 
+      {/* Footer */}
+      <footer className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="text-sm text-gray-400">
+            © {new Date().getFullYear()} {NOMBRE_PRODUCTO}. Todos los derechos reservados.
+          </span>
+          <a href={`mailto:${EMAIL_COMERCIAL}`} className="text-sm text-gray-400 hover:text-white transition-colors">
+            {EMAIL_COMERCIAL}
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

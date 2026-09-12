@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SmartTable — Gestión de Mesas",
+  title: "SmartTable — Gestión de mesas por QR para restaurantes",
   description:
-    "Sistema de gestión de mesas para restaurantes: escaneo QR, llamada al mozo y pedido de cuenta en tiempo real.",
+    "Sistema profesional de gestión de mesas por QR: tus comensales llaman al mozo y piden la cuenta en tiempo real, sin apps. Solicitá una demo.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

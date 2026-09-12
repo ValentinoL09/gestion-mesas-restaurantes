@@ -94,12 +94,6 @@ export default function Login() {
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          ¿No tenés una cuenta?{' '}
-          <Link href="/registro" className="text-blue-600 hover:underline font-medium">
-            Crear cuenta
-          </Link>
-        </p>
-        <p className="mt-2 text-center text-sm text-gray-500">
           <Link href="/reset-password" className="text-blue-600 hover:underline font-medium">
             ¿Olvidaste tu contraseña?
           </Link>
