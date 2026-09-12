@@ -1,0 +1,89 @@
+'use client';
+
+import { useState } from 'react';
+import { supabase } from '../../src/lib/supabase';
+import { useRouter } from 'next/navigation';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(false);
+  const router = useRouter();
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setCargando(true);
+    setError('');
+
+    // 1. Validar credenciales con Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError('Correo o contraseña incorrectos.');
+      setCargando(false);
+      return;
+    }
+
+    // 2. Buscar el restaurante asociado al usuario
+    const { data: restaurante, error: restError } = await supabase
+      .from('restaurantes')
+      .select('id')
+      .eq('usuario_id', authData.user.id)
+      .single();
+
+    if (restError || !restaurante) {
+      setError('No tienes un restaurante asignado a esta cuenta.');
+      setCargando(false);
+      return;
+    }
+
+    // 3. Redirigir al dashboard ocultando el proceso
+    router.push(`/dashboard/${restaurante.id}`);
+  }
+
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Acceso al Panel</h1>
+        
+        {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium">{error}</div>}
+        
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+              required 
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+              required 
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            disabled={cargando}
+            className="w-full py-3 mt-2 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+          >
+            {cargando ? 'Verificando...' : 'Iniciar Sesión'}
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}
