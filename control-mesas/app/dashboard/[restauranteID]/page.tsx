@@ -3,6 +3,7 @@
 import { use, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../src/lib/supabase';
+import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
 
 interface Mesa {
   id: string;
@@ -20,7 +21,8 @@ interface Peticion {
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
-  
+  const { verificando } = useProtegerRestaurante(restauranteID);
+
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [peticiones, setPeticiones] = useState<Peticion[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -115,6 +117,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     return dif < 1 ? 'ahora' : `hace ${dif} min`;
   };
 
+  if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
   if (cargando) return <div className="p-10 text-center">Cargando tablero...</div>;
 
   return (

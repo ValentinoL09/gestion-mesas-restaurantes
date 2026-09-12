@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../../src/lib/supabase';
+import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface Mesa {
@@ -12,6 +13,7 @@ interface Mesa {
 
 export default function GeneradorQRs({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
+  const { verificando } = useProtegerRestaurante(restauranteID);
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [cargando, setCargando] = useState(true);
   const [urlBase, setUrlBase] = useState('http://localhost:3000');
@@ -48,6 +50,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
     }
   }
 
+  if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
   if (cargando) return <div className="p-10 text-center">Cargando QRs...</div>;
 
   return (
