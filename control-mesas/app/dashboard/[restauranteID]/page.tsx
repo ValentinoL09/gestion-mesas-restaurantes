@@ -3,26 +3,15 @@
 import { use, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../src/lib/supabase';
-
-interface Mesa {
-  id: string;
-  numero: number;
-  estado: string; // Agregamos el estado de la mesa
-}
-
-interface Peticion {
-  id: string;
-  mesa_id: string;
-  tipo: 'llamar_mozo' | 'pedir_cuenta';
-  estado: string;
-  creado_en: string;
-}
+import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
+import type { Tables } from '../../../src/lib/database.types';
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
-  
-  const [mesas, setMesas] = useState<Mesa[]>([]);
-  const [peticiones, setPeticiones] = useState<Peticion[]>([]);
+  const { verificando } = useProtegerRestaurante(restauranteID);
+
+  const [mesas, setMesas] = useState<Tables<'mesas'>[]>([]);
+  const [peticiones, setPeticiones] = useState<Tables<'peticiones'>[]>([]);
   const [cargando, setCargando] = useState(true);
   const [horaActual, setHoraActual] = useState(new Date());
 
@@ -30,7 +19,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     // 1. Buscar mesas (Ahora también pedimos la columna 'estado')
     const { data: mesasData } = await supabase
       .from('mesas')
-      .select('id, numero, estado')
+      .select('*')
       .eq('restaurante_id', restauranteID)
       .order('numero');
     
@@ -51,7 +40,10 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   }, [restauranteID]);
 
   useEffect(() => {
-    cargarDatos();
+    const inicializar = async () => {
+      await cargarDatos();
+    };
+    inicializar();
 
     const intervaloReloj = setInterval(() => setHoraActual(new Date()), 60000);
 
@@ -65,7 +57,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
         filter: `restaurante_id=eq.${restauranteID}`
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          try { new Audio('/alerta.mp3').play().catch(() => {}); } catch (e) { }
+          try { new Audio('/alerta.mp3').play().catch(() => {}); } catch { }
         }
         cargarDatos();
       })
@@ -95,17 +87,11 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     else cargarDatos(); 
   }
 
-  // EL NUEVO BOTÓN: Limpia Peticiones + Cierra Sesiones + Libera Mesa
+  // Libera la mesa de forma ATÓMICA vía RPC transaccional:
+  // marca peticiones atendidas + cierra sesiones + pasa la mesa a 'libre'.
   async function liberarMesa(mesaId: string) {
-    // 1. Limpiamos peticiones
-    await supabase.from('peticiones').update({ estado: 'atendida' }).eq('mesa_id', mesaId).eq('estado', 'pendiente');
-    
-    // 2. Desactivamos las sesiones (Expulsamos a los usuarios de sus QRs)
-    await supabase.from('sesiones_clientes').update({ activa: false }).eq('mesa_id', mesaId).eq('activa', true);
+    const { error } = await supabase.rpc('liberar_mesa', { p_mesa_id: mesaId });
 
-    // 3. Pasamos la mesa a estado 'libre'
-    const { error } = await supabase.from('mesas').update({ estado: 'libre' }).eq('id', mesaId);
-      
     if (error) console.error("Error al liberar la mesa:", error);
     else cargarDatos(); 
   }
@@ -115,6 +101,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     return dif < 1 ? 'ahora' : `hace ${dif} min`;
   };
 
+  if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
   if (cargando) return <div className="p-10 text-center">Cargando tablero...</div>;
 
   return (

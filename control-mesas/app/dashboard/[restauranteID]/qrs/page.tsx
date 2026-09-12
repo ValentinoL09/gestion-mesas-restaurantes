@@ -1,37 +1,74 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../../../src/lib/supabase';
+import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
+import type { Tables } from '../../../../src/lib/database.types';
 import { QRCodeSVG } from 'qrcode.react';
 
-interface Mesa {
-  id: string;
-  numero: number;
-}
+type Mesa = Tables<'mesas'>;
 
 export default function GeneradorQRs({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
+  const { verificando } = useProtegerRestaurante(restauranteID);
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [urlBase, setUrlBase] = useState('http://localhost:3000');
+  const [urlBase] = useState(() =>
+    typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+  );
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setUrlBase(window.location.origin);
-    }
-    cargarMesas();
-  }, [restauranteID]);
+  const [urlCarta, setUrlCarta] = useState('');
+  const [guardandoCarta, setGuardandoCarta] = useState(false);
+  const [mensajeCarta, setMensajeCarta] = useState('');
 
-  async function cargarMesas() {
+  const cargarMesas = useCallback(async () => {
     const { data } = await supabase
       .from('mesas')
-      .select('id, numero')
+      .select('*')
       .eq('restaurante_id', restauranteID)
       .order('numero');
     
     if (data) setMesas(data);
     setCargando(false);
+  }, [restauranteID]);
+
+  const cargarUrlCarta = useCallback(async () => {
+    const { data } = await supabase
+      .from('restaurantes')
+      .select('url_carta')
+      .eq('id', restauranteID)
+      .single();
+
+    if (data?.url_carta) setUrlCarta(data.url_carta);
+  }, [restauranteID]);
+
+  useEffect(() => {
+    const inicializar = async () => {
+      await cargarMesas();
+      await cargarUrlCarta();
+    };
+    inicializar();
+  }, [cargarMesas, cargarUrlCarta]);
+
+  async function guardarUrlCarta() {
+    setGuardandoCarta(true);
+    setMensajeCarta('');
+
+    const url = urlCarta.trim();
+
+    const { error } = await supabase
+      .from('restaurantes')
+      .update({ url_carta: url || null })
+      .eq('id', restauranteID);
+
+    if (error) {
+      setMensajeCarta('❌ No se pudo guardar.');
+    } else {
+      setMensajeCarta('✅ Carta actualizada.');
+      setTimeout(() => setMensajeCarta(''), 3000);
+    }
+    setGuardandoCarta(false);
   }
 
   async function agregarMesa() {
@@ -48,6 +85,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
     }
   }
 
+  if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
   if (cargando) return <div className="p-10 text-center">Cargando QRs...</div>;
 
   return (
@@ -76,6 +114,32 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
             🖨️ Imprimir QRs
           </button>
         </div>
+      </div>
+
+      {/* Carta digital configurable (Oculta al imprimir) */}
+      <div className="print:hidden max-w-4xl mx-auto mb-10 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Carta Digital</h2>
+        <p className="text-gray-500 text-sm mb-4">
+          Si tu restaurante tiene una carta digital, pega su URL aquí. El QR mostrará el botón
+          &quot;Ver Carta Digital&quot; al comensal. Déjalo vacío si el QR solo debe servir para el sistema de mozos.
+        </p>
+        <div className="flex gap-3">
+          <input
+            type="url"
+            placeholder="https://tucarta.ejemplo.com/menu"
+            value={urlCarta}
+            onChange={(e) => setUrlCarta(e.target.value)}
+            className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+          />
+          <button
+            onClick={guardarUrlCarta}
+            disabled={guardandoCarta}
+            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+          >
+            {guardandoCarta ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+        {mensajeCarta && <p className="mt-3 text-sm font-medium text-gray-700">{mensajeCarta}</p>}
       </div>
 
       {/* Grilla de QRs (Optimizada para impresión) */}
