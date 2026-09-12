@@ -100,8 +100,9 @@ export default function Registro() {
 
         <form onSubmit={handleRegistro} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del restaurante</label>
+            <label htmlFor="nombreRestaurante" className="block text-sm font-medium text-gray-700 mb-1">Nombre del restaurante</label>
             <input
+              id="nombreRestaurante"
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
@@ -111,8 +112,9 @@ export default function Registro() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <label htmlFor="emailRegistro" className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
             <input
+              id="emailRegistro"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -122,8 +124,9 @@ export default function Registro() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label htmlFor="passwordRegistro" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <input
+              id="passwordRegistro"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

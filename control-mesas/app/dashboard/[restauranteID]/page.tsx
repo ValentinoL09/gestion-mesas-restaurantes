@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
 import NavDashboard from './_nav';
+import { minutosTranscurridos } from '../../../src/lib/utils';
 import type { Tables } from '../../../src/lib/database.types';
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
@@ -97,11 +98,6 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     else cargarDatos(); 
   }
 
-  const minutosTranscurridos = (fechaIso: string) => {
-    const dif = Math.floor((horaActual.getTime() - new Date(fechaIso).getTime()) / 60000);
-    return dif < 1 ? 'ahora' : `hace ${dif} min`;
-  };
-
   if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
   if (cargando) return <div className="p-10 text-center">Cargando tablero...</div>;
 
@@ -126,7 +122,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-bold text-lg">Mesa {mesa?.numero || '?'}</span>
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {minutosTranscurridos(pet.creado_en)}
+                      {minutosTranscurridos(pet.creado_en, horaActual)}
                     </span>
                   </div>
                   <p className="font-medium text-gray-700 mb-4">

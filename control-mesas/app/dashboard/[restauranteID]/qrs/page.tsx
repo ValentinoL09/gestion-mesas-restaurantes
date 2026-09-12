@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
 import NavDashboard from '../_nav';
+import { urlMesaQR } from '../../../../src/lib/utils';
 import type { Tables } from '../../../../src/lib/database.types';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -144,7 +145,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
       {/* Grilla de QRs (Optimizada para impresión) */}
       <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-8">
         {mesas.map((mesa) => {
-          const urlQR = `${urlBase}/m/${mesa.id}`;
+          const urlQR = urlMesaQR(urlBase, mesa.id);
           
           return (
             <div key={mesa.id} className="bg-white p-6 rounded-2xl border-2 border-gray-200 flex flex-col items-center text-center shadow-sm break-inside-avoid print:shadow-none print:border-gray-400">
