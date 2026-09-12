@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -7,120 +7,157 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
-      restaurantes: {
-        Row: {
-          id: string
-          usuario_id: string
-          url_carta: string | null
-        }
-        Insert: {
-          id?: string
-          usuario_id: string
-          url_carta?: string | null
-        }
-        Update: {
-          id?: string
-          usuario_id?: string
-          url_carta?: string | null
-        }
-        Relationships: []
-      }
       mesas: {
         Row: {
+          estado: string
           id: string
           numero: number
+          qr_url: string | null
           restaurante_id: string
-          estado: 'libre' | 'ocupada'
         }
         Insert: {
+          estado?: string
           id?: string
           numero: number
+          qr_url?: string | null
           restaurante_id: string
-          estado?: 'libre' | 'ocupada'
         }
         Update: {
+          estado?: string
           id?: string
           numero?: number
+          qr_url?: string | null
           restaurante_id?: string
-          estado?: 'libre' | 'ocupada'
         }
         Relationships: [
           {
-            foreignKeyName: 'mesas_restaurante_id_fkey'
-            columns: ['restaurante_id']
+            foreignKeyName: "mesas_restaurante_id_fkey"
+            columns: ["restaurante_id"]
             isOneToOne: false
-            referencedRelation: 'restaurantes'
-            referencedColumns: ['id']
+            referencedRelation: "restaurantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mesas_restaurante_id_fkey"
+            columns: ["restaurante_id"]
+            isOneToOne: false
+            referencedRelation: "restaurantes_publico"
+            referencedColumns: ["id"]
           },
         ]
       }
       peticiones: {
         Row: {
+          creado_en: string
+          estado: string
           id: string
           mesa_id: string
+          metodo_pago: string | null
           restaurante_id: string
-          tipo: 'llamar_mozo' | 'pedir_cuenta'
-          estado: 'pendiente' | 'atendida'
-          creado_en: string
+          tipo: string
         }
         Insert: {
+          creado_en?: string
+          estado?: string
           id?: string
           mesa_id: string
+          metodo_pago?: string | null
           restaurante_id: string
-          tipo: 'llamar_mozo' | 'pedir_cuenta'
-          estado: 'pendiente' | 'atendida'
-          creado_en?: string
+          tipo: string
         }
         Update: {
+          creado_en?: string
+          estado?: string
           id?: string
           mesa_id?: string
+          metodo_pago?: string | null
           restaurante_id?: string
-          tipo?: 'llamar_mozo' | 'pedir_cuenta'
-          estado?: 'pendiente' | 'atendida'
-          creado_en?: string
+          tipo?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'peticiones_mesa_id_fkey'
-            columns: ['mesa_id']
+            foreignKeyName: "peticiones_mesa_id_fkey"
+            columns: ["mesa_id"]
             isOneToOne: false
-            referencedRelation: 'mesas'
-            referencedColumns: ['id']
+            referencedRelation: "mesas"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'peticiones_restaurante_id_fkey'
-            columns: ['restaurante_id']
+            foreignKeyName: "peticiones_restaurante_id_fkey"
+            columns: ["restaurante_id"]
             isOneToOne: false
-            referencedRelation: 'restaurantes'
-            referencedColumns: ['id']
+            referencedRelation: "restaurantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peticiones_restaurante_id_fkey"
+            columns: ["restaurante_id"]
+            isOneToOne: false
+            referencedRelation: "restaurantes_publico"
+            referencedColumns: ["id"]
           },
         ]
       }
-      sesiones_clientes: {
+      restaurantes: {
         Row: {
+          creado_en: string
           id: string
-          mesa_id: string
-          activa: boolean
+          link_menu: string | null
+          nombre: string
+          url_carta: string | null
+          usuario_id: string | null
         }
         Insert: {
+          creado_en?: string
           id?: string
-          mesa_id: string
-          activa: boolean
+          link_menu?: string | null
+          nombre: string
+          url_carta?: string | null
+          usuario_id?: string | null
         }
         Update: {
+          creado_en?: string
+          id?: string
+          link_menu?: string | null
+          nombre?: string
+          url_carta?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      sesiones_clientes: {
+        Row: {
+          activa: boolean
+          creado_en: string
+          id: string
+          mesa_id: string
+        }
+        Insert: {
+          activa?: boolean
+          creado_en?: string
+          id?: string
+          mesa_id: string
+        }
+        Update: {
+          activa?: boolean
+          creado_en?: string
           id?: string
           mesa_id?: string
-          activa?: boolean
         }
         Relationships: [
           {
-            foreignKeyName: 'sesiones_clientes_mesa_id_fkey'
-            columns: ['mesa_id']
+            foreignKeyName: "sesiones_clientes_mesa_id_fkey"
+            columns: ["mesa_id"]
             isOneToOne: false
-            referencedRelation: 'mesas'
-            referencedColumns: ['id']
+            referencedRelation: "mesas"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -128,56 +165,152 @@ export type Database = {
     Views: {
       restaurantes_publico: {
         Row: {
-          id: string
+          id: string | null
           url_carta: string | null
         }
         Insert: {
-          id?: never
-          url_carta?: never
+          id?: string | null
+          url_carta?: string | null
         }
         Update: {
-          id?: never
-          url_carta?: never
+          id?: string | null
+          url_carta?: string | null
         }
         Relationships: []
       }
     }
     Functions: {
-      liberar_mesa: {
-        Args: {
-          p_mesa_id: string
-        }
-        Returns: undefined
-      }
+      is_owner: { Args: never; Returns: boolean }
+      liberar_mesa: { Args: { p_mesa_id: string }; Returns: undefined }
     }
-    Enums: {}
-    CompositeTypes: {}
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, 'public'>]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema['Tables'] & PublicSchema['Views'])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions['schema']]['Tables'] &
-        Database[PublicTableNameOrOptions['schema']]['Views'])
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions['schema']]['Tables'] &
-      Database[PublicTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema['Tables'] &
-        PublicSchema['Views'])
-    ? (PublicSchema['Tables'] &
-        PublicSchema['Views'])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
       : never
     : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
