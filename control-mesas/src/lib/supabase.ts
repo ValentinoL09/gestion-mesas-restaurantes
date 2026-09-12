@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Pegamos los strings crudos temporalmente
-const supabaseUrl = "https://tmnzlkkaixgezesbozsd.supabase.co";
-const supabaseKey = "sb_publishable_uogDXy7ijMsQ-VrF5r5N6w_3OWeRzvM";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
