@@ -78,7 +78,7 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
             onClick={() => window.print()}
             className="px-6 py-3 bg-[var(--t-secundario)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-sm"
           >
-            🖨️ Imprimir QRs
+            Imprimir QRs
           </button>
         </div>
       </div>
