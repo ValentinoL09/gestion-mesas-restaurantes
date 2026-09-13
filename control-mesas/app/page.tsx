@@ -63,42 +63,6 @@ export default function LandingPage() {
                 Ver cómo funciona
               </a>
             </div>
-
-            {/* Mock del panel */}
-            <div className="mt-16 max-w-3xl mx-auto rounded-2xl border border-gray-800 bg-gray-900/70 backdrop-blur p-6 text-left shadow-2xl">
-              <div className="flex items-center gap-2 mb-5">
-                <span className="w-3 h-3 rounded-full bg-red-500/70" />
-                <span className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                <span className="w-3 h-3 rounded-full bg-green-500/70" />
-                <span className="ml-3 text-sm text-gray-400">Panel del local · en tiempo real</span>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-4">
-                <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-extrabold text-white">12</p>
-                    <p className="text-xs text-gray-400">mesas activas</p>
-                  </div>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                </div>
-                <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-extrabold text-white">04</p>
-                    <p className="text-xs text-gray-400">piden al mozo</p>
-                  </div>
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                </div>
-                <div className="rounded-xl bg-gray-800/60 border border-gray-700 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-extrabold text-white">02</p>
-                    <p className="text-xs text-gray-400">piden la cuenta</p>
-                  </div>
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                </div>
-              </div>
-              <div className="mt-4 rounded-xl bg-blue-600/10 border border-blue-600/20 px-4 py-3 text-sm text-blue-300">
-                Alerta entrante: Mesa 7 → Llamar al mozo
-              </div>
-            </div>
           </div>
         </section>
 
