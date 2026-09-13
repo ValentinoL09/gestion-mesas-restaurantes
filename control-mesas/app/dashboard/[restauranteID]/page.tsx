@@ -4,7 +4,7 @@ import { use, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
 import NavDashboard from './_nav';
-import { minutosTranscurridos } from '../../../src/lib/utils';
+import { minutosTranscurridos, etiquetaCuenta } from '../../../src/lib/utils';
 import type { Tables } from '../../../src/lib/database.types';
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
@@ -131,7 +131,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
                     </span>
                   </div>
                   <p className="font-medium text-gray-700 mb-4">
-                    {esCuenta ? '💳 Pide la cuenta' : '👋 Llama al mozo'}
+                    {esCuenta ? etiquetaCuenta(pet.metodo_pago) : '👋 Llama al mozo'}
                   </p>
                   <button 
                     onClick={() => marcarAtendido(pet.id)}

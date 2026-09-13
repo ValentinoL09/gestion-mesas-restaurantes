@@ -17,30 +17,41 @@ vi.mock('../../../src/lib/supabase', () => ({ supabase }));
 
 const MESA = { id: 'mesa-1', numero: 5, restaurante_id: 'rest-1', estado: 'libre' };
 
-function cadena(respuesta: unknown) {
-  const target = {
-    select: vi.fn(() => target),
-    insert: vi.fn(() => target),
-    update: vi.fn(() => target),
-    eq: vi.fn(() => target),
-    order: vi.fn(() => target),
-    limit: vi.fn(() => target),
-    single: vi.fn(() => Promise.resolve(respuesta)),
-    then: (onFulfilled: (v: unknown) => unknown) => Promise.resolve(respuesta).then(onFulfilled),
-  };
-  return target;
-}
+const RESTAURANTE_DEFAULT = {
+  url_carta: null,
+  logo_url: null,
+  color_primario: '#7c3aed',
+  color_secundario: '#0f172a',
+  nombre: 'Pizzería Don Gato',
+};
 
-function configurarSupabase(sobre: Partial<Record<string, unknown>> = {}) {
+function configurarSupabase(
+  sobre: Partial<Record<string, unknown>> = {},
+  registrosInserts: { tabla: string; payload: unknown }[] = []
+) {
   (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((tabla: string) => {
     const respuestas: Record<string, unknown> = {
       mesas: { data: MESA, error: null },
-      restaurantes_publico: { data: { url_carta: null }, error: null },
+      restaurantes_publico: { data: RESTAURANTE_DEFAULT, error: null },
       peticiones: { data: [], error: null },
       sesiones_clientes: { data: [], error: null },
       ...sobre,
     };
-    return cadena(respuestas[tabla] ?? { data: null, error: null });
+    const target = {
+      select: vi.fn(() => target),
+      insert: vi.fn((payload: unknown) => {
+        registrosInserts.push({ tabla, payload });
+        return target;
+      }),
+      update: vi.fn(() => target),
+      eq: vi.fn(() => target),
+      order: vi.fn(() => target),
+      limit: vi.fn(() => target),
+      single: vi.fn(() => Promise.resolve(respuestas[tabla] ?? { data: null, error: null })),
+      then: (onFulfilled: (v: unknown) => unknown) =>
+        Promise.resolve(respuestas[tabla] ?? { data: null, error: null }).then(onFulfilled),
+    };
+    return target;
   });
 
   const canal = {
@@ -48,6 +59,8 @@ function configurarSupabase(sobre: Partial<Record<string, unknown>> = {}) {
     subscribe: vi.fn(() => canal),
   };
   (supabase.channel as ReturnType<typeof vi.fn>).mockReturnValue(canal);
+
+  return registrosInserts;
 }
 
 async function renderComensal() {
@@ -96,5 +109,68 @@ describe('PantallaComensal', () => {
 
     expect(await screen.findByText(/mozo está en camino/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Mozo avisado/ })).toBeDisabled();
+  });
+
+  it('muestra el nombre del restaurante cuando no tiene logo', async () => {
+    configurarSupabase();
+    await renderComensal();
+
+    expect(screen.getByText('Pizzería Don Gato')).toBeInTheDocument();
+  });
+
+  it('muestra el logo del restaurante cuando lo tiene', async () => {
+    configurarSupabase({
+      restaurantes_publico: { data: { ...RESTAURANTE_DEFAULT, logo_url: '/logo-pizzeria.png' }, error: null },
+    });
+    await renderComensal();
+
+    expect(screen.getByRole('img', { name: 'Pizzería Don Gato' })).toBeInTheDocument();
+    expect(screen.queryByText('Pizzería Don Gato')).not.toBeInTheDocument();
+  });
+
+  it('muestra el selector de método de pago al tocar Pedir la Cuenta', async () => {
+    configurarSupabase();
+    await renderComensal();
+
+    await userEvent.click(screen.getByRole('button', { name: /Pedir la Cuenta/ }));
+
+    expect(screen.getByRole('button', { name: /Efectivo \/ Transferencia/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tarjeta/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cancelar/ })).toBeInTheDocument();
+  });
+
+  it('envía la petición con metodo_pago "tarjeta" al elegir Tarjeta', async () => {
+    const inserts = configurarSupabase();
+    await renderComensal();
+
+    await userEvent.click(screen.getByRole('button', { name: /Pedir la Cuenta/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Tarjeta/ }));
+
+    expect(await screen.findByText(/cuenta está en camino/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cuenta pedida/ })).toBeDisabled();
+
+    const peticionCuenta = inserts.find((i) => i.tabla === 'peticiones');
+    expect(peticionCuenta?.payload).toMatchObject({
+      tipo: 'pedir_cuenta',
+      metodo_pago: 'tarjeta',
+      estado: 'pendiente',
+    });
+  });
+
+  it('envía la petición con metodo_pago "efectivo" al elegir Efectivo / Transferencia', async () => {
+    const inserts = configurarSupabase();
+    await renderComensal();
+
+    await userEvent.click(screen.getByRole('button', { name: /Pedir la Cuenta/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Efectivo \/ Transferencia/ }));
+
+    expect(await screen.findByText(/cuenta está en camino/)).toBeInTheDocument();
+
+    const peticionCuenta = inserts.find((i) => i.tabla === 'peticiones');
+    expect(peticionCuenta?.payload).toMatchObject({
+      tipo: 'pedir_cuenta',
+      metodo_pago: 'efectivo',
+      estado: 'pendiente',
+    });
   });
 });

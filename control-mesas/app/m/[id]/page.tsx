@@ -1,17 +1,34 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { supabase } from '../../../src/lib/supabase';
-import type { Tables } from '../../../src/lib/database.types';
+import type { Tables, TablesInsert } from '../../../src/lib/database.types';
+
+type TemaComensal = {
+  nombre: string;
+  logoUrl: string | null;
+  colorPrimario: string;
+  colorSecundario: string;
+};
+
+const TEMA_COMENSAL_DEFAULT: TemaComensal = {
+  nombre: 'SmartTable',
+  logoUrl: null,
+  colorPrimario: '#2563eb',
+  colorSecundario: '#0a0a0a',
+};
 
 export default function PantallaComensal({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  
+
   const [mesa, setMesa] = useState<Tables<'mesas'> | null>(null);
   const [urlCarta, setUrlCarta] = useState<string | null>(null);
+  const [tema, setTema] = useState<TemaComensal>(TEMA_COMENSAL_DEFAULT);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState('');
   const [bloqueado, setBloqueado] = useState(false);
+  const [metodoSeleccionando, setMetodoSeleccionando] = useState(false);
   const [tiposPendientes, setTiposPendientes] = useState<Set<string>>(new Set());
 
   function marcarTipo(tipo: string, pendiente: boolean) {
@@ -43,24 +60,27 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (!mesaData) {
         setCargando(false);
-        return; 
+        return;
       }
       setMesa(mesaData);
 
-      // 1b. Carta digital configurable: si el restaurante definió una URL,
-      // el comensal puede abrir su carta (si no, el QR es solo para mozos).
+      // 1b. Identidad del restaurante: logo/nombre + colores + carta digital.
       const { data: restaurante } = await supabase
         .from('restaurantes_publico')
-        .select('url_carta')
+        .select('url_carta, logo_url, color_primario, color_secundario, nombre')
         .eq('id', mesaData.restaurante_id)
         .single();
 
-      if (restaurante?.url_carta) {
-        setUrlCarta(restaurante.url_carta);
-      }
+      if (restaurante?.url_carta) setUrlCarta(restaurante.url_carta);
+      setTema({
+        nombre: restaurante?.nombre || TEMA_COMENSAL_DEFAULT.nombre,
+        logoUrl: restaurante?.logo_url ?? null,
+        colorPrimario: restaurante?.color_primario || TEMA_COMENSAL_DEFAULT.colorPrimario,
+        colorSecundario: restaurante?.color_secundario || TEMA_COMENSAL_DEFAULT.colorSecundario,
+      });
 
       // 1c. Peticiones vigentes: deshabilitar botones ya solicitados (anti-spam).
       await cargarPeticionesPendientes();
@@ -71,7 +91,7 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         .select('id')
         .eq('mesa_id', id)
         .eq('activa', true)
-        .limit(1); 
+        .limit(1);
 
       const sesionActiva = sesionesActivas?.[0];
       const miToken = localStorage.getItem(`token_mesa_${id}`);
@@ -92,24 +112,24 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
           await supabase.from('mesas').update({ estado: 'ocupada' }).eq('id', id);
         }
       }
-      
+
       if (vigente) setCargando(false);
     }
-    
+
     inicializarMesa();
 
     // 3. MAGIA EN VIVO: escuchar si el mozo nos expulsa Y si atiende peticiones
     const canalComensal = supabase
       .channel(`mesa-${id}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
         table: 'mesas',
-        filter: `id=eq.${id}`
+        filter: `id=eq.${id}`,
       }, (payload) => {
         if (payload.new.estado === 'libre') {
           setBloqueado(true);
-          localStorage.removeItem(`token_mesa_${id}`); 
+          localStorage.removeItem(`token_mesa_${id}`);
         }
       })
       .on('postgres_changes', {
@@ -136,26 +156,36 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
     };
   }, [id, cargarPeticionesPendientes]);
 
-  async function enviarPeticion(tipo: 'llamar_mozo' | 'pedir_cuenta') {
+  async function enviarPeticion(tipo: 'llamar_mozo' | 'pedir_cuenta', metodo?: 'efectivo' | 'tarjeta') {
     if (!mesa || bloqueado || tiposPendientes.has(tipo)) return;
-    
+
     setMensaje('Enviando...');
 
-    const { error } = await supabase
-      .from('peticiones')
-      .insert({
-        mesa_id: id,
-        restaurante_id: mesa.restaurante_id,
-        tipo: tipo,
-        estado: 'pendiente'
-      });
+    const peticion: TablesInsert<'peticiones'> =
+      tipo === 'pedir_cuenta'
+        ? {
+            mesa_id: id,
+            restaurante_id: mesa.restaurante_id,
+            tipo,
+            estado: 'pendiente',
+            metodo_pago: metodo,
+          }
+        : {
+            mesa_id: id,
+            restaurante_id: mesa.restaurante_id,
+            tipo,
+            estado: 'pendiente',
+          };
+
+    const { error } = await supabase.from('peticiones').insert(peticion);
 
     if (error) {
       setMensaje('❌ Ya hay una solicitud vigente para esto.');
       setTimeout(() => setMensaje(''), 3000);
     } else {
       marcarTipo(tipo, true);
-      setMensaje('✅ ¡Tu mozo está en camino!');
+      if (tipo === 'pedir_cuenta') setMetodoSeleccionando(false);
+      setMensaje(tipo === 'pedir_cuenta' ? '✅ ¡La cuenta está en camino!' : '✅ ¡Tu mozo está en camino!');
       setTimeout(() => setMensaje(''), 3000);
     }
   }
@@ -182,13 +212,28 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
   const llamadoMozo = tiposPendientes.has('llamar_mozo');
   const pedidaCuenta = tiposPendientes.has('pedir_cuenta');
 
+  const varsIdentidad = {
+    '--t-primario': tema.colorPrimario,
+    '--t-secundario': tema.colorSecundario,
+  } as CSSProperties;
+
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 font-sans">
+    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 font-sans" style={varsIdentidad}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-8 text-center">
-        
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-800">Mesa {mesa.numero}</h1>
-          <p className="text-gray-500">¿En qué podemos ayudarte?</p>
+
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3">
+            {tema.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tema.logoUrl} alt={tema.nombre} className="w-16 h-16 rounded-xl object-contain" />
+            ) : (
+              <h2 className="text-sm font-bold tracking-widest uppercase text-[var(--t-primario)]">{tema.nombre}</h2>
+            )}
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-gray-800">Mesa {mesa.numero}</h1>
+            <p className="text-gray-500">¿En qué podemos ayudarte?</p>
+          </div>
         </div>
 
         {mensaje && (
@@ -203,41 +248,65 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
               href={urlCarta}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-4 bg-gray-800 text-white rounded-xl font-semibold text-lg hover:bg-gray-700 transition-colors shadow-md"
+              className="block w-full py-4 bg-[var(--t-secundario)] text-white rounded-xl font-semibold text-lg hover:opacity-90 transition-opacity shadow-md"
             >
               📖 Ver Carta Digital
             </a>
           )}
-          
+
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-gray-200"></div>
             <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">O solicita asistencia</span>
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
 
-          <button 
+          <button
             onClick={() => enviarPeticion('llamar_mozo')}
             disabled={llamadoMozo}
             className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors shadow-md active:scale-95 disabled:active:scale-100 ${
               llamadoMozo
                 ? 'bg-gray-200 text-gray-500 cursor-default'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-[var(--t-primario)] text-white hover:opacity-90'
             }`}
           >
             {llamadoMozo ? '👋 Mozo avisado' : '👋 Llamar al Mozo'}
           </button>
 
-          <button 
-            onClick={() => enviarPeticion('pedir_cuenta')}
-            disabled={pedidaCuenta}
-            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors shadow-md active:scale-95 disabled:active:scale-100 ${
-              pedidaCuenta
-                ? 'bg-gray-200 text-gray-500 cursor-default'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-          >
-            {pedidaCuenta ? '💳 Cuenta pedida' : '💳 Pedir la Cuenta'}
-          </button>
+          {metodoSeleccionando && !pedidaCuenta ? (
+            <div className="space-y-3 bg-gray-50 rounded-2xl p-4 border border-gray-200">
+              <p className="text-sm font-bold text-gray-700">¿Cómo va a pagar?</p>
+              <button
+                onClick={() => enviarPeticion('pedir_cuenta', 'efectivo')}
+                className="w-full py-3.5 rounded-xl font-semibold bg-[var(--t-secundario)] text-white hover:opacity-90 transition-opacity shadow-sm active:scale-[0.98]"
+              >
+                💵 Efectivo / Transferencia
+              </button>
+              <button
+                onClick={() => enviarPeticion('pedir_cuenta', 'tarjeta')}
+                className="w-full py-3.5 rounded-xl font-semibold bg-[var(--t-primario)] text-white hover:opacity-90 transition-opacity shadow-sm active:scale-[0.98]"
+              >
+                💳 Tarjeta
+              </button>
+              <button
+                onClick={() => setMetodoSeleccionando(false)}
+                className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setMetodoSeleccionando(true)}
+              disabled={pedidaCuenta}
+              className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors shadow-md active:scale-95 disabled:active:scale-100 ${
+                pedidaCuenta
+                  ? 'bg-gray-200 text-gray-500 cursor-default'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+            >
+              {pedidaCuenta ? '💳 Cuenta pedida' : '💳 Pedir la Cuenta'}
+            </button>
+          )}
         </div>
 
         <p className="text-xs text-gray-400 pt-6">
