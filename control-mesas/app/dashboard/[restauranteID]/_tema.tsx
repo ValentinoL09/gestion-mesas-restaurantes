@@ -13,7 +13,7 @@ export type TemaRestaurante = {
 // personalizó muestra la marca SmartTable hasta cargar su identidad.
 export const TEMA_DEFAULT: TemaRestaurante = {
   nombre: 'SmartTable',
-  logoUrl: '/logo.jpg',
+  logoUrl: '/logo.png',
   colorPrimario: '#2563eb',
   colorSecundario: '#0a0a0a',
 };

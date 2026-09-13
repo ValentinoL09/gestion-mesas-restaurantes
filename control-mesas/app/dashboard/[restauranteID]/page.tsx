@@ -1,11 +1,10 @@
 'use client';
 
 import { use, useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
 import { supabase } from '../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
 import NavDashboard from './_nav';
-import { minutosTranscurridos } from '../../../src/lib/utils';
+import { minutosTranscurridos, etiquetaCuenta } from '../../../src/lib/utils';
 import type { Tables } from '../../../src/lib/database.types';
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
@@ -16,6 +15,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   const [peticiones, setPeticiones] = useState<Tables<'peticiones'>[]>([]);
   const [cargando, setCargando] = useState(true);
   const [horaActual, setHoraActual] = useState(new Date());
+  const [errorLiberar, setErrorLiberar] = useState('');
 
   const cargarDatos = useCallback(async () => {
     // 1. Buscar mesas (Ahora también pedimos la columna 'estado')
@@ -92,10 +92,15 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   // Libera la mesa de forma ATÓMICA vía RPC transaccional:
   // marca peticiones atendidas + cierra sesiones + pasa la mesa a 'libre'.
   async function liberarMesa(mesaId: string) {
+    setErrorLiberar('');
     const { error } = await supabase.rpc('liberar_mesa', { p_mesa_id: mesaId });
 
-    if (error) console.error("Error al liberar la mesa:", error);
-    else cargarDatos(); 
+    if (error) {
+      console.error("Error al liberar la mesa:", error);
+      setErrorLiberar('No se pudo liberar la mesa. Intenta de nuevo.');
+    } else {
+      await cargarDatos();
+    }
   }
 
   if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
@@ -126,7 +131,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
                     </span>
                   </div>
                   <p className="font-medium text-gray-700 mb-4">
-                    {esCuenta ? '💳 Pide la cuenta' : '👋 Llama al mozo'}
+                    {esCuenta ? etiquetaCuenta(pet.metodo_pago) : '👋 Llama al mozo'}
                   </p>
                   <button 
                     onClick={() => marcarAtendido(pet.id)}
@@ -144,13 +149,11 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
       <main className="flex-1 p-6 md:p-10 bg-gray-50 h-auto md:h-screen overflow-y-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Mapa del Local</h1>
-          <Link
-            href={`/dashboard/${restauranteID}/qrs`}
-            className="px-5 py-2.5 text-sm font-semibold bg-[var(--t-primario)] text-white rounded-xl hover:opacity-90 transition-opacity shadow-sm"
-          >
-            🔳 Generar QRs
-          </Link>
         </div>
+
+        {errorLiberar && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium">{errorLiberar}</div>
+        )}
         
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {mesas.map(mesa => {

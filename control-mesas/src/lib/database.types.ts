@@ -178,6 +178,7 @@ export type Database = {
           color_secundario: string | null
           id: string | null
           logo_url: string | null
+          nombre: string | null
           url_carta: string | null
         }
         Insert: {
@@ -185,6 +186,7 @@ export type Database = {
           color_secundario?: string | null
           id?: string | null
           logo_url?: string | null
+          nombre?: string | null
           url_carta?: string | null
         }
         Update: {
@@ -192,6 +194,7 @@ export type Database = {
           color_secundario?: string | null
           id?: string | null
           logo_url?: string | null
+          nombre?: string | null
           url_carta?: string | null
         }
         Relationships: []

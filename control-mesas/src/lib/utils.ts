@@ -6,3 +6,9 @@ export function minutosTranscurridos(fechaIso: string, ahora: Date = new Date())
 export function urlMesaQR(urlBase: string, mesaId: string): string {
   return `${urlBase}/m/${mesaId}`;
 }
+
+export function etiquetaCuenta(metodoPago: string | null): string {
+  return metodoPago === 'tarjeta'
+    ? '💳 Paga con Tarjeta'
+    : '💵 Paga con Efectivo / Transferencia';
+}

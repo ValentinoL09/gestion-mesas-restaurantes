@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { minutosTranscurridos, urlMesaQR } from './utils';
+import { minutosTranscurridos, urlMesaQR, etiquetaCuenta } from './utils';
 
 describe('minutosTranscurridos', () => {
   const ahora = new Date('2026-01-01T12:00:00Z');
@@ -32,5 +32,19 @@ describe('urlMesaQR', () => {
 
   it('respeta la base local en desarrollo', () => {
     expect(urlMesaQR('http://localhost:3000', 'xyz')).toBe('http://localhost:3000/m/xyz');
+  });
+});
+
+describe('etiquetaCuenta', () => {
+  it('devuelve Tarjeta para metodo_pago "tarjeta"', () => {
+    expect(etiquetaCuenta('tarjeta')).toBe('💳 Paga con Tarjeta');
+  });
+
+  it('devuelve Efectivo / Transferencia para "efectivo"', () => {
+    expect(etiquetaCuenta('efectivo')).toBe('💵 Paga con Efectivo / Transferencia');
+  });
+
+  it('devuelve Efectivo / Transferencia si no hay método (valor por defecto)', () => {
+    expect(etiquetaCuenta(null)).toBe('💵 Paga con Efectivo / Transferencia');
   });
 });

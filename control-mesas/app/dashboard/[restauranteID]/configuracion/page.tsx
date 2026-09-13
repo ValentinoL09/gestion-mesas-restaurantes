@@ -4,12 +4,10 @@ import { use, useEffect, useState } from 'react';
 import { supabase } from '../../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
 import NavDashboard from '../_nav';
-import { useTema } from '../_tema';
 
 export default function ConfiguracionRestaurante({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
   const { verificando } = useProtegerRestaurante(restauranteID);
-  const tema = useTema();
 
   const [nombre, setNombre] = useState('');
   const [urlCarta, setUrlCarta] = useState('');
@@ -99,30 +97,6 @@ export default function ConfiguracionRestaurante({ params }: { params: Promise<{
           >
             {guardando ? 'Guardando...' : 'Guardar cambios'}
           </button>
-        </section>
-
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-          <h2 className="text-lg font-bold text-gray-800">Identidad visual</h2>
-          <p className="text-sm text-gray-500">
-            Así se ve la marca de tu local en el sistema. Por ahora la configuramos nosotros junto con tu alta.
-          </p>
-          <div className="flex items-center gap-4">
-            {tema.logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={tema.logoUrl} alt={tema.nombre} className="w-12 h-12 rounded-lg object-contain" />
-            )}
-            <span className="text-lg font-bold text-gray-800">{tema.nombre}</span>
-            <span
-              className="w-8 h-8 rounded-lg border border-gray-300"
-              title={`Color principal: ${tema.colorPrimario}`}
-              style={{ backgroundColor: tema.colorPrimario }}
-            />
-            <span
-              className="w-8 h-8 rounded-lg border border-gray-300"
-              title={`Color secundario: ${tema.colorSecundario}`}
-              style={{ backgroundColor: tema.colorSecundario }}
-            />
-          </div>
         </section>
       </main>
     </div>

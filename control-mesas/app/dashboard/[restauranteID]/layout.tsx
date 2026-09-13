@@ -29,7 +29,7 @@ export default async function DashboardLayout({
 
   const tema: TemaRestaurante = {
     nombre: restaurante.nombre,
-    logoUrl: restaurante.logo_url ?? TEMA_DEFAULT.logoUrl,
+    logoUrl: restaurante.logo_url,
     colorPrimario: restaurante.color_primario ?? TEMA_DEFAULT.colorPrimario,
     colorSecundario: restaurante.color_secundario ?? TEMA_DEFAULT.colorSecundario,
   };

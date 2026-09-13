@@ -21,10 +21,6 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
     typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   );
 
-  const [urlCarta, setUrlCarta] = useState('');
-  const [guardandoCarta, setGuardandoCarta] = useState(false);
-  const [mensajeCarta, setMensajeCarta] = useState('');
-
   const cargarMesas = useCallback(async () => {
     const { data } = await supabase
       .from('mesas')
@@ -36,43 +32,12 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
     setCargando(false);
   }, [restauranteID]);
 
-  const cargarUrlCarta = useCallback(async () => {
-    const { data } = await supabase
-      .from('restaurantes')
-      .select('url_carta')
-      .eq('id', restauranteID)
-      .single();
-
-    if (data?.url_carta) setUrlCarta(data.url_carta);
-  }, [restauranteID]);
-
   useEffect(() => {
     const inicializar = async () => {
       await cargarMesas();
-      await cargarUrlCarta();
     };
     inicializar();
-  }, [cargarMesas, cargarUrlCarta]);
-
-  async function guardarUrlCarta() {
-    setGuardandoCarta(true);
-    setMensajeCarta('');
-
-    const url = urlCarta.trim();
-
-    const { error } = await supabase
-      .from('restaurantes')
-      .update({ url_carta: url || null })
-      .eq('id', restauranteID);
-
-    if (error) {
-      setMensajeCarta('❌ No se pudo guardar.');
-    } else {
-      setMensajeCarta('✅ Carta actualizada.');
-      setTimeout(() => setMensajeCarta(''), 3000);
-    }
-    setGuardandoCarta(false);
-  }
+  }, [cargarMesas]);
 
   async function agregarMesa() {
     const siguienteNumero = mesas.length > 0 ? Math.max(...mesas.map(m => m.numero)) + 1 : 1;
@@ -116,32 +81,6 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
             🖨️ Imprimir QRs
           </button>
         </div>
-      </div>
-
-      {/* Carta digital configurable (Oculta al imprimir) */}
-      <div className="print:hidden max-w-4xl mx-auto mb-10 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <h2 className="text-lg font-bold text-gray-800 mb-1">Carta Digital</h2>
-        <p className="text-gray-500 text-sm mb-4">
-          Si tu restaurante tiene una carta digital, pega su URL aquí. El QR mostrará el botón
-          &quot;Ver Carta Digital&quot; al comensal. Déjalo vacío si el QR solo debe servir para el sistema de mozos.
-        </p>
-        <div className="flex gap-3">
-          <input
-            type="url"
-            placeholder="https://tucarta.ejemplo.com/menu"
-            value={urlCarta}
-            onChange={(e) => setUrlCarta(e.target.value)}
-            className="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
-          />
-          <button
-            onClick={guardarUrlCarta}
-            disabled={guardandoCarta}
-            className="px-6 py-3 bg-[var(--t-secundario)] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:bg-gray-400"
-          >
-            {guardandoCarta ? 'Guardando...' : 'Guardar'}
-          </button>
-        </div>
-        {mensajeCarta && <p className="mt-3 text-sm font-medium text-gray-700">{mensajeCarta}</p>}
       </div>
 
       {/* Grilla de QRs (Optimizada para impresión) */}
