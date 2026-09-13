@@ -90,26 +90,27 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         .from('sesiones_clientes')
         .select('id')
         .eq('mesa_id', id)
-        .eq('activa', true)
-        .limit(1);
+        .eq('activa', true);
 
-      const sesionActiva = sesionesActivas?.[0];
       const miToken = localStorage.getItem(`token_mesa_${id}`);
+      const haySesionActiva = (sesionesActivas?.length ?? 0) > 0;
+      const soySesionActiva = sesionesActivas?.some((s) => s.id === miToken) ?? false;
 
-      if (sesionActiva) {
-        if (sesionActiva.id !== miToken) {
-          setBloqueado(true);
-        }
+      if (mesaData.estado === 'ocupada' && haySesionActiva && !soySesionActiva) {
+        // La mesa la está operando OTRO dispositivo.
+        setBloqueado(true);
       } else {
-        const { data: nuevaSesion } = await supabase
-          .from('sesiones_clientes')
-          .insert({ mesa_id: id, activa: true })
-          .select('id')
-          .single();
+        // Mesa libre (o ya es mi sesión): ocuparla de forma atómica. El RPC
+        // cierra sesiones viejas/fantasma y crea una nueva para este dispositivo.
+        const { data: sesionId, error: ocuparError } = await supabase.rpc('ocupar_mesa', {
+          p_mesa_id: id,
+        });
 
-        if (nuevaSesion) {
-          localStorage.setItem(`token_mesa_${id}`, nuevaSesion.id);
-          await supabase.from('mesas').update({ estado: 'ocupada' }).eq('id', id);
+        if (!ocuparError && sesionId) {
+          localStorage.setItem(`token_mesa_${id}`, sesionId);
+        } else {
+          console.error('No se pudo ocupar la mesa:', ocuparError);
+          setBloqueado(true);
         }
       }
 
@@ -254,11 +255,13 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
             </a>
           )}
 
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-gray-200"></div>
-            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">O solicita asistencia</span>
-            <div className="flex-grow border-t border-gray-200"></div>
-          </div>
+          {urlCarta && (
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-200"></div>
+              <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">O solicita asistencia</span>
+              <div className="flex-grow border-t border-gray-200"></div>
+            </div>
+          )}
 
           <button
             onClick={() => enviarPeticion('llamar_mozo')}

@@ -203,6 +203,7 @@ export type Database = {
     Functions: {
       is_owner: { Args: never; Returns: boolean }
       liberar_mesa: { Args: { p_mesa_id: string }; Returns: undefined }
+      ocupar_mesa: { Args: { p_mesa_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
