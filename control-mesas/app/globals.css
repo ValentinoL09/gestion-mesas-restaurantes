@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Los inputs no tienen color propio y, en modo oscuro del S.O., heredan
+   --foreground (#ededed) quedando ilegibles sobre las tarjetas blancas.
+   El producto usa fondos claros siempre: forzamos texto oscuro. */
+input,
+textarea,
+select {
+  color: #171717;
+  caret-color: #171717;
+}

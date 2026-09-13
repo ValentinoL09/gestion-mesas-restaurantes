@@ -9,6 +9,7 @@ const { supabase } = vi.hoisted(() => {
     from: vi.fn(),
     removeChannel: vi.fn(),
     channel: vi.fn(),
+    rpc: vi.fn(),
   };
   return { supabase };
 });
@@ -59,6 +60,7 @@ function configurarSupabase(
     subscribe: vi.fn(() => canal),
   };
   (supabase.channel as ReturnType<typeof vi.fn>).mockReturnValue(canal);
+  (supabase.rpc as ReturnType<typeof vi.fn>).mockResolvedValue({ data: 'sesion-nueva', error: null });
 
   return registrosInserts;
 }
@@ -91,13 +93,53 @@ describe('PantallaComensal', () => {
     expect(screen.getByRole('button', { name: /Pedir la Cuenta/ })).toBeInTheDocument();
   });
 
-  it('bloquea la pantalla si la mesa ya está siendo usada por otro dispositivo', async () => {
+  it('bloquea la pantalla si la mesa está ocupada por OTRO dispositivo', async () => {
     configurarSupabase({
+      mesas: { data: { ...MESA, estado: 'ocupada' }, error: null },
       sesiones_clientes: { data: [{ id: 'otro-token' }], error: null },
     });
     await renderComensal();
 
     expect(screen.getByRole('heading', { name: 'Mesa en Uso' })).toBeInTheDocument();
+    expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  it('toma la mesa vía RPC aunque exista una sesión vieja fantasma (mesa libre)', async () => {
+    configurarSupabase({
+      sesiones_clientes: { data: [{ id: 'sesion-fantasma' }], error: null },
+    });
+    await renderComensal();
+
+    expect(screen.getByRole('heading', { name: 'Mesa 5' })).toBeInTheDocument();
+    expect(supabase.rpc).toHaveBeenCalledWith('ocupar_mesa', { p_mesa_id: 'mesa-1' });
+    expect(localStorage.getItem('token_mesa_mesa-1')).toBe('sesion-nueva');
+  });
+
+  it('ocupa la mesa vía RPC y guarda la sesión al escanear una mesa libre', async () => {
+    configurarSupabase();
+    await renderComensal();
+
+    expect(supabase.rpc).toHaveBeenCalledWith('ocupar_mesa', { p_mesa_id: 'mesa-1' });
+    expect(localStorage.getItem('token_mesa_mesa-1')).toBe('sesion-nueva');
+  });
+
+  it('no muestra "O solicita asistencia" cuando el restaurante no tiene carta digital', async () => {
+    configurarSupabase();
+    await renderComensal();
+
+    expect(screen.queryByText(/solicita asistencia/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Ver Carta Digital/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pedir la Cuenta/ })).toBeInTheDocument();
+  });
+
+  it('muestra la carta digital y "O solicita asistencia" cuando el restaurante tiene url_carta', async () => {
+    configurarSupabase({
+      restaurantes_publico: { data: { ...RESTAURANTE_DEFAULT, url_carta: '/carta.pdf' }, error: null },
+    });
+    await renderComensal();
+
+    expect(screen.getByRole('link', { name: /Ver Carta Digital/ })).toBeInTheDocument();
+    expect(screen.getByText(/solicita asistencia/)).toBeInTheDocument();
   });
 
   it('deshabilita el botón al enviar una petición (anti-spam)', async () => {
