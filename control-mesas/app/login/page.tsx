@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../src/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { esAdmin } from '../../src/lib/admin';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,12 @@ export default function Login() {
     if (authError) {
       setError('Correo o contraseña incorrectos.');
       setCargando(false);
+      return;
+    }
+
+    // 1.5 Cuenta de administrador: va al panel de admin, no a un restaurante.
+    if (esAdmin(authData.user.email)) {
+      router.push('/admin');
       return;
     }
 
