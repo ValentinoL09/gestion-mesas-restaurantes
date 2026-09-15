@@ -4,6 +4,7 @@ import {
   urlMesaQR,
   etiquetaCuenta,
   esSesionRecovery,
+  urlConRecuperacion,
 } from './utils';
 
 describe('minutosTranscurridos', () => {
@@ -60,6 +61,34 @@ function tokenConAmr(amr: unknown[] | undefined): string {
   );
   return `encabezado.${payload}.firma`;
 }
+
+describe('urlConRecuperacion', () => {
+  it('devuelve true si el hash trae type=recovery (flujo implícito)', () => {
+    expect(
+      urlConRecuperacion(
+        'https://app.ejemplo.com/reset-password#access_token=abc&type=recovery&expires_in=3600'
+      )
+    ).toBe(true);
+  });
+
+  it('devuelve true si la query trae type=recovery', () => {
+    expect(urlConRecuperacion('https://app.ejemplo.com/reset-password?type=recovery')).toBe(true);
+  });
+
+  it('devuelve true si solo se pasa el fragmento de la URL', () => {
+    expect(urlConRecuperacion('#access_token=abc&type=recovery&token_type=bearer')).toBe(true);
+  });
+
+  it('devuelve false para una URL limpia sin recuperación', () => {
+    expect(urlConRecuperacion('https://app.ejemplo.com/reset-password')).toBe(false);
+  });
+
+  it('devuelve false para un link con tokens sin type=recovery', () => {
+    expect(
+      urlConRecuperacion('https://app.ejemplo.com/reset-password#access_token=abc&token_type=bearer')
+    ).toBe(false);
+  });
+});
 
 describe('esSesionRecovery', () => {
   it('devuelve true si la sesión vino de un link de recuperación', () => {

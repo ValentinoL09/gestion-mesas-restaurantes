@@ -14,6 +14,20 @@ export function etiquetaCuenta(metodoPago: string | null): string {
 }
 
 /**
+ * Determina si la URL (o un fragmento de ella) corresponde a un link de
+ * recuperación de contraseña. Con flujo implícito el link trae los tokens en
+ * el hash con `type=recovery`; con flujo PKCE nunca aparece este parámetro.
+ */
+export function urlConRecuperacion(href: string): boolean {
+  if (href.includes('type=recovery')) return true;
+  try {
+    return new URL(href).searchParams.get('type') === 'recovery';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Determina si la sesión fue creada desde un link de recuperación de
  * contraseña, mirando el claim `amr` del JWT (contiene "recovery").
  * Cualquier sesión normal (password/otp) devuelve false.

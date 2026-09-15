@@ -2,8 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../src/lib/supabase';
-import { esSesionRecovery } from '../../src/lib/utils';
+import { createClient } from '@supabase/supabase-js';
+import { esSesionRecovery, urlConRecuperacion } from '../../src/lib/utils';
+
+// Este flujo usa un cliente con `flowType: 'implicit'` en vez del cliente
+// global (@supabase/ssr fuerza PKCE). Los links de recuperación PKCE solo
+// funcionan en el mismo navegador donde se pidieron (el code verifier queda
+// guardado ahí). Con el flujo implícito los tokens viajan en la URL y el link
+// abre bien en cualquier navegador/dispositivo.
+const supabaseRecovery = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { flowType: 'implicit' } }
+);
+
+// Se captura el hash antes de que supabase.js lo limpie al procesar la URL.
+const hashInicial = typeof window !== 'undefined' ? window.location.hash : '';
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
@@ -15,12 +29,25 @@ export default function ResetPassword() {
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      // Solo las sesiones creadas desde un link de recuperación (claim
-      // "recovery" en el amr) habilitan el form de nueva contraseña.
-      setExisteSesionRecovery(esSesionRecovery(data.session));
+    const { data: sub } = supabaseRecovery.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setExisteSesionRecovery(true);
+          setEmailSesion(session?.user.email ?? '');
+        }
+      }
+    );
+
+    // Si el hash trae type=recovery venimos de un link de recuperación, o la
+    // sesión ya guardada tiene claim amr "recovery".
+    supabaseRecovery.auth.getSession().then(({ data }) => {
+      if (esSesionRecovery(data.session) || urlConRecuperacion(hashInicial)) {
+        setExisteSesionRecovery(true);
+      }
       setEmailSesion(data.session?.user.email ?? '');
     });
+
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   async function enviarLink(e: React.FormEvent) {
@@ -30,7 +57,7 @@ export default function ResetPassword() {
     setMensaje('');
 
     const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/reset-password`;
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error: resetError } = await supabaseRecovery.auth.resetPasswordForEmail(email, {
       redirectTo,
     });
 
@@ -47,7 +74,7 @@ export default function ResetPassword() {
     setCargando(true);
     setError('');
 
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: updateError } = await supabaseRecovery.auth.updateUser({ password });
 
     if (updateError) {
       setError(updateError.message);
