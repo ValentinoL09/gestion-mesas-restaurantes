@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../src/lib/supabase-server';
 import { TemaProvider, TEMA_DEFAULT, type TemaRestaurante } from './_tema';
+import { SucursalesProvider } from './_sucursales';
 
 export default async function DashboardLayout({
   children,
@@ -27,6 +28,12 @@ export default async function DashboardLayout({
 
   if (!restaurante) redirect('/login');
 
+  const { data: sucursales } = await supabase
+    .from('sucursales')
+    .select('id, nombre')
+    .eq('restaurante_id', restauranteID)
+    .order('nombre');
+
   const tema: TemaRestaurante = {
     nombre: restaurante.nombre,
     logoUrl: restaurante.logo_url,
@@ -36,17 +43,19 @@ export default async function DashboardLayout({
 
   return (
     <TemaProvider tema={tema}>
-      <div
-        className="min-h-screen font-sans"
-        style={
-          {
-            '--t-primario': tema.colorPrimario,
-            '--t-secundario': tema.colorSecundario,
-          } as React.CSSProperties
-        }
-      >
-        {children}
-      </div>
+      <SucursalesProvider sucursales={sucursales ?? []}>
+        <div
+          className="min-h-screen font-sans"
+          style={
+            {
+              '--t-primario': tema.colorPrimario,
+              '--t-secundario': tema.colorSecundario,
+            } as React.CSSProperties
+          }
+        >
+          {children}
+        </div>
+      </SucursalesProvider>
     </TemaProvider>
   );
 }

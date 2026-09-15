@@ -1,15 +1,24 @@
 'use client';
 
 import { use, useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../src/lib/useProtegerRestaurante';
 import NavDashboard from './_nav';
-import { minutosTranscurridos, etiquetaCuenta } from '../../../src/lib/utils';
+import { useSucursales } from './_sucursales';
+import { resolverSucursalActiva, minutosTranscurridos, etiquetaCuenta } from '../../../src/lib/utils';
 import type { Tables } from '../../../src/lib/database.types';
 
 export default function DashboardStaff({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
   const { verificando } = useProtegerRestaurante(restauranteID);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sucursales = useSucursales();
+
+  const parametro = searchParams.get('sucursal');
+  const sucursalActiva = resolverSucursalActiva(sucursales, parametro);
+  const sucursalActual = sucursales.find((s) => s.id === sucursalActiva);
 
   const [mesas, setMesas] = useState<Tables<'mesas'>[]>([]);
   const [peticiones, setPeticiones] = useState<Tables<'peticiones'>[]>([]);
@@ -17,21 +26,33 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
   const [horaActual, setHoraActual] = useState(new Date());
   const [errorLiberar, setErrorLiberar] = useState('');
 
+  useEffect(() => {
+    // Si no hay ?sucursal= (o es inválido) fijamos la primera en la URL.
+    if (sucursalActiva && sucursales.length > 0 && parametro !== sucursalActiva) {
+      router.replace(`/dashboard/${restauranteID}?sucursal=${sucursalActiva}`);
+    }
+  }, [sucursalActiva, sucursales.length, parametro, restauranteID, router]);
+
   const cargarDatos = useCallback(async () => {
-    // 1. Buscar mesas (Ahora también pedimos la columna 'estado')
+    if (!sucursalActiva) {
+      setCargando(false);
+      return;
+    }
+
+    // 1. Buscar mesas de la sucursal activa (Ahora también pedimos la columna 'estado')
     const { data: mesasData } = await supabase
       .from('mesas')
       .select('*')
-      .eq('restaurante_id', restauranteID)
+      .eq('sucursal_id', sucursalActiva)
       .order('numero');
     
     if (mesasData) setMesas(mesasData);
 
-    // 2. Buscar peticiones pendientes
+    // 2. Buscar peticiones pendientes de la sucursal activa
     const { data: peticionesData, error } = await supabase
       .from('peticiones')
       .select('*')
-      .eq('restaurante_id', restauranteID)
+      .eq('sucursal_id', sucursalActiva)
       .eq('estado', 'pendiente')
       .order('creado_en', { ascending: true });
     
@@ -39,7 +60,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     if (peticionesData) setPeticiones(peticionesData);
     
     setCargando(false);
-  }, [restauranteID]);
+  }, [sucursalActiva]);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -47,16 +68,18 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
     };
     inicializar();
 
+    if (!sucursalActiva) return;
+
     const intervaloReloj = setInterval(() => setHoraActual(new Date()), 60000);
 
     // 3. Magia en Vivo: Escuchamos peticiones Y el estado de las mesas
     const canal = supabase
-      .channel('control-mesas')
+      .channel(`control-mesas-${sucursalActiva}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'peticiones',
-        filter: `restaurante_id=eq.${restauranteID}`
+        filter: `sucursal_id=eq.${sucursalActiva}`
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
           try { new Audio('/alerta.mp3').play().catch(() => {}); } catch { }
@@ -67,7 +90,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
         event: 'UPDATE', 
         schema: 'public', 
         table: 'mesas',
-        filter: `restaurante_id=eq.${restauranteID}` // Escuchamos cuando la mesa cambia a ocupada/libre
+        filter: `sucursal_id=eq.${sucursalActiva}` // Escuchamos cuando la mesa cambia a ocupada/libre
       }, () => {
         cargarDatos();
       })
@@ -77,7 +100,7 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
       clearInterval(intervaloReloj);
       supabase.removeChannel(canal);
     };
-  }, [cargarDatos, restauranteID]);
+  }, [cargarDatos, sucursalActiva]);
 
   async function marcarAtendido(peticionId: string) {
     const { error } = await supabase
@@ -148,7 +171,14 @@ export default function DashboardStaff({ params }: { params: Promise<{ restauran
 
       <main className="flex-1 p-6 md:p-10 bg-gray-50 h-auto md:h-screen overflow-y-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Mapa del Local</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Mapa del Local</h1>
+            {sucursalActual && (
+              <p className="text-sm text-gray-500 mt-1">
+                Sucursal: <span className="font-medium text-gray-700">{sucursalActual.nombre}</span>
+              </p>
+            )}
+          </div>
         </div>
 
         {errorLiberar && (

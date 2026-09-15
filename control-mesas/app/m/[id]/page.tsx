@@ -167,6 +167,7 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         ? {
             mesa_id: id,
             restaurante_id: mesa.restaurante_id,
+            sucursal_id: mesa.sucursal_id,
             tipo,
             estado: 'pendiente',
             metodo_pago: metodo,
@@ -174,6 +175,7 @@ export default function PantallaComensal({ params }: { params: Promise<{ id: str
         : {
             mesa_id: id,
             restaurante_id: mesa.restaurante_id,
+            sucursal_id: mesa.sucursal_id,
             tipo,
             estado: 'pendiente',
           };

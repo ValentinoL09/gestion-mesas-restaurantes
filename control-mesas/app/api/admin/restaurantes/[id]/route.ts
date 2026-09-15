@@ -77,6 +77,7 @@ export async function DELETE(
   }
   await supabaseAdmin.from('peticiones').delete().eq('restaurante_id', id);
   await supabaseAdmin.from('mesas').delete().eq('restaurante_id', id);
+  await supabaseAdmin.from('sucursales').delete().eq('restaurante_id', id);
 
   const { error } = await supabaseAdmin.from('restaurantes').delete().eq('id', id);
   if (error) return Response.json({ error: error.message }, { status: 500 });

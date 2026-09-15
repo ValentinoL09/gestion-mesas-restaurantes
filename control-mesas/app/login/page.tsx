@@ -36,27 +36,33 @@ export default function Login() {
       return;
     }
 
-    // 2. Buscar el restaurante asociado al usuario
-    const { data: restaurante, error: restError } = await supabase
+    // 2. Buscar el restaurante asociado al usuario (puede tener varios)
+    const { data: restaurantes, error: restError } = await supabase
       .from('restaurantes')
       .select('id')
       .eq('usuario_id', authData.user.id)
-      .single();
+      .order('creado_en');
 
     if (restError) {
-      setError('Ocurrió un error al cargar tu restaurante.');
+      setError('Ocurrió un error al cargar tus restaurantes.');
       setCargando(false);
       return;
     }
 
-    if (!restaurante) {
+    if (!restaurantes || restaurantes.length === 0) {
       // La cuenta existe pero todavía no tiene restaurante: ir al onboarding.
       router.push('/configurar-restaurante');
       return;
     }
 
-    // 3. Redirigir al dashboard ocultando el proceso
-    router.push(`/dashboard/${restaurante.id}`);
+    if (restaurantes.length === 1) {
+      // Una sola marca: ir directo a su panel.
+      router.push(`/dashboard/${restaurantes[0].id}`);
+      return;
+    }
+
+    // Varias marcas: dejar que el usuario elija cuál abrir.
+    router.push('/configurar-restaurante');
   }
 
   return (

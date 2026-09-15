@@ -72,6 +72,15 @@ export default function ConfigurarRestaurante() {
       return;
     }
 
+    // Toda marca nueva nace con su primera sucursal.
+    const { error: sucError } = await supabase
+      .from('sucursales')
+      .insert({ restaurante_id: restaurante.id, nombre: 'Sucursal 1' });
+
+    if (sucError) {
+      console.error('No se pudo crear la sucursal inicial:', sucError.message);
+    }
+
     router.replace(`/dashboard/${restaurante.id}`);
   }
 

@@ -7,12 +7,15 @@ import NavAdmin from '../../_nav';
 import type { Tables } from '../../../../src/lib/database.types';
 
 type Mesa = Tables<'mesas'>;
+type SucursalMini = { id: string; nombre: string };
 
 export default function AdminMesas({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
   const { verificando } = useProtegerAdmin();
 
   const [nombre, setNombre] = useState('');
+  const [sucursales, setSucursales] = useState<SucursalMini[]>([]);
+  const [sucursalId, setSucursalId] = useState('');
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [numeros, setNumeros] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
@@ -21,30 +24,48 @@ export default function AdminMesas({ params }: { params: Promise<{ restauranteID
 
   const cargar = useCallback(async () => {
     try {
-      const [restRes, mesasRes] = await Promise.all([
+      const [restRes, sucRes, mesasRes] = await Promise.all([
         fetch(`/api/admin/restaurantes/${restauranteID}`, { cache: 'no-store' }),
-        fetch(`/api/admin/restaurantes/${restauranteID}/mesas`, { cache: 'no-store' }),
+        fetch(`/api/admin/restaurantes/${restauranteID}/sucursales`, { cache: 'no-store' }),
+        sucursalId
+          ? fetch(`/api/admin/restaurantes/${restauranteID}/mesas?sucursalId=${sucursalId}`, {
+              cache: 'no-store',
+            })
+          : Promise.resolve(null),
       ]);
 
       const restData = await restRes.json();
-      const mesasData = await mesasRes.json();
-
       if (!restRes.ok) throw new Error(restData.error || 'Error al cargar el restaurante.');
-      if (!mesasRes.ok) throw new Error(mesasData.error || 'Error al cargar las mesas.');
-
       setNombre(restData.restaurante?.nombre ?? '');
-      setMesas(mesasData.mesas ?? []);
-      setNumeros(
-        Object.fromEntries(
-          (mesasData.mesas ?? []).map((m: Mesa) => [m.id, String(m.numero)])
-        )
-      );
+
+      const sucData = await sucRes.json();
+      const listaSucursales: SucursalMini[] = sucRes.ok
+        ? (sucData.sucursales ?? [])
+        : [];
+      setSucursales(listaSucursales);
+      if (!sucursalId && listaSucursales.length > 0) {
+        setSucursalId(listaSucursales[0].id);
+      }
+
+      if (mesasRes) {
+        const mesasData = await mesasRes.json();
+        if (!mesasRes.ok) throw new Error(mesasData.error || 'Error al cargar las mesas.');
+        setMesas(mesasData.mesas ?? []);
+        setNumeros(
+          Object.fromEntries(
+            (mesasData.mesas ?? []).map((m: Mesa) => [m.id, String(m.numero)])
+          )
+        );
+      } else {
+        setMesas([]);
+        setNumeros({});
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar las mesas.');
     } finally {
       setCargando(false);
     }
-  }, [restauranteID]);
+  }, [restauranteID, sucursalId]);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -53,10 +74,19 @@ export default function AdminMesas({ params }: { params: Promise<{ restauranteID
     inicializar();
   }, [cargar]);
 
+  function cambiarSucursal(id: string) {
+    setSucursalId(id);
+    setError('');
+    setCargando(true);
+  }
+
   async function agregarMesa() {
+    if (!sucursalId) return;
     setError('');
     const res = await fetch(`/api/admin/restaurantes/${restauranteID}/mesas`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sucursalId }),
     });
 
     if (res.ok) {
@@ -110,6 +140,8 @@ export default function AdminMesas({ params }: { params: Promise<{ restauranteID
 
   if (verificando || cargando) return <div className="p-10 text-center">Cargando...</div>;
 
+  const sucursalActual = sucursales.find((s) => s.id === sucursalId);
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <NavAdmin actual="detalle" volverA={`/admin/${restauranteID}`} />
@@ -119,7 +151,7 @@ export default function AdminMesas({ params }: { params: Promise<{ restauranteID
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Mesas de {nombre}</h1>
             <p className="text-gray-500 text-sm mt-1">
-              Agregá, eliminá o renumerá las mesas del restaurante.
+              Agregá, eliminá o renumerá las mesas de cada sucursal.
             </p>
           </div>
           <Link
@@ -133,6 +165,26 @@ export default function AdminMesas({ params }: { params: Promise<{ restauranteID
         {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium">{error}</div>}
         {mensaje && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm font-medium">{mensaje}</div>}
 
+        {sucursales.length > 1 && (
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4">
+            <label htmlFor="sucursalSelect" className="text-sm font-medium text-gray-700">
+              Sucursal:
+            </label>
+            <select
+              id="sucursalSelect"
+              value={sucursalId}
+              onChange={(e) => cambiarSucursal(e.target.value)}
+              className="flex-1 p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+            >
+              {sucursales.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex justify-end">
           <button
             onClick={agregarMesa}
@@ -142,8 +194,16 @@ export default function AdminMesas({ params }: { params: Promise<{ restauranteID
           </button>
         </div>
 
+        {sucursalActual && (
+          <p className="text-xs text-gray-400 -mt-3">
+            Sucursal: {sucursalActual.nombre}
+          </p>
+        )}
+
         {mesas.length === 0 ? (
-          <p className="text-gray-400 text-center italic mt-6">Este restaurante no tiene mesas.</p>
+          <p className="text-gray-400 text-center italic mt-6">
+            Esta sucursal no tiene mesas.
+          </p>
         ) : (
           <ul className="bg-white rounded-2xl shadow-sm border border-gray-200 divide-y divide-gray-100">
             {mesas.map((mesa) => (
