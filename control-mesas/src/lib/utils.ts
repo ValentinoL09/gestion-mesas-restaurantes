@@ -12,3 +12,25 @@ export function etiquetaCuenta(metodoPago: string | null): string {
     ? '💳 Paga con Tarjeta'
     : '💵 Paga con Efectivo / Transferencia';
 }
+
+/**
+ * Determina si la sesión fue creada desde un link de recuperación de
+ * contraseña, mirando el claim `amr` del JWT (contiene "recovery").
+ * Cualquier sesión normal (password/otp) devuelve false.
+ */
+export function esSesionRecovery(session: { access_token: string } | null): boolean {
+  if (!session) return false;
+
+  try {
+    const segmentoBase64Url = session.access_token.split('.')[1];
+    const payload = JSON.parse(
+      atob(segmentoBase64Url.replace(/-/g, '+').replace(/_/g, '/'))
+    );
+    const amr: unknown[] = payload.amr ?? [];
+    return amr.some((a) =>
+      typeof a === 'string' ? a === 'recovery' : (a as { method?: string }).method === 'recovery'
+    );
+  } catch {
+    return false;
+  }
+}

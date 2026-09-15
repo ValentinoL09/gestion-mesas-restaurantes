@@ -3,18 +3,23 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../src/lib/supabase';
+import { esSesionRecovery } from '../../src/lib/utils';
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [existeSesionRecovery, setExisteSesionRecovery] = useState(false);
+  const [emailSesion, setEmailSesion] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setExisteSesionRecovery(Boolean(data.session));
+      // Solo las sesiones creadas desde un link de recuperación (claim
+      // "recovery" en el amr) habilitan el form de nueva contraseña.
+      setExisteSesionRecovery(esSesionRecovery(data.session));
+      setEmailSesion(data.session?.user.email ?? '');
     });
   }, []);
 
@@ -24,7 +29,7 @@ export default function ResetPassword() {
     setError('');
     setMensaje('');
 
-    const redirectTo = `${window.location.origin}/reset-password`;
+    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/reset-password`;
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
     });
@@ -66,6 +71,11 @@ export default function ResetPassword() {
 
         {existeSesionRecovery ? (
           <form onSubmit={guardarNuevaPassword} className="space-y-4">
+            {emailSesion && (
+              <p className="text-sm text-gray-500 text-center">
+                Vas a cambiar la contraseña de <span className="font-semibold text-gray-700">{emailSesion}</span>
+              </p>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
               <input
