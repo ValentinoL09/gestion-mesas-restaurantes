@@ -21,6 +21,7 @@ export type Database = {
           numero: number
           qr_url: string | null
           restaurante_id: string
+          sucursal_id: string
         }
         Insert: {
           estado?: string
@@ -28,6 +29,7 @@ export type Database = {
           numero: number
           qr_url?: string | null
           restaurante_id: string
+          sucursal_id: string
         }
         Update: {
           estado?: string
@@ -35,6 +37,7 @@ export type Database = {
           numero?: number
           qr_url?: string | null
           restaurante_id?: string
+          sucursal_id?: string
         }
         Relationships: [
           {
@@ -51,6 +54,13 @@ export type Database = {
             referencedRelation: "restaurantes_publico"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mesas_sucursal_id_fkey"
+            columns: ["sucursal_id"]
+            isOneToOne: false
+            referencedRelation: "sucursales"
+            referencedColumns: ["id"]
+          },
         ]
       }
       peticiones: {
@@ -61,6 +71,7 @@ export type Database = {
           mesa_id: string
           metodo_pago: string | null
           restaurante_id: string
+          sucursal_id: string
           tipo: string
         }
         Insert: {
@@ -70,6 +81,7 @@ export type Database = {
           mesa_id: string
           metodo_pago?: string | null
           restaurante_id: string
+          sucursal_id: string
           tipo: string
         }
         Update: {
@@ -79,6 +91,7 @@ export type Database = {
           mesa_id?: string
           metodo_pago?: string | null
           restaurante_id?: string
+          sucursal_id?: string
           tipo?: string
         }
         Relationships: [
@@ -101,6 +114,13 @@ export type Database = {
             columns: ["restaurante_id"]
             isOneToOne: false
             referencedRelation: "restaurantes_publico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peticiones_sucursal_id_fkey"
+            columns: ["sucursal_id"]
+            isOneToOne: false
+            referencedRelation: "sucursales"
             referencedColumns: ["id"]
           },
         ]
@@ -170,6 +190,35 @@ export type Database = {
           },
         ]
       }
+      sucursales: {
+        Row: {
+          creado_en: string
+          id: string
+          nombre: string
+          restaurante_id: string
+        }
+        Insert: {
+          creado_en?: string
+          id?: string
+          nombre: string
+          restaurante_id: string
+        }
+        Update: {
+          creado_en?: string
+          id?: string
+          nombre?: string
+          restaurante_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sucursales_restaurante_id_fkey"
+            columns: ["restaurante_id"]
+            isOneToOne: false
+            referencedRelation: "restaurantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       restaurantes_publico: {
@@ -201,6 +250,7 @@ export type Database = {
       }
     }
     Functions: {
+      eliminar_sucursal: { Args: { p_sucursal_id: string }; Returns: undefined }
       is_owner: { Args: never; Returns: boolean }
       liberar_mesa: { Args: { p_mesa_id: string }; Returns: undefined }
       ocupar_mesa: { Args: { p_mesa_id: string }; Returns: string }

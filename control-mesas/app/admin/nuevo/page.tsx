@@ -13,8 +13,18 @@ export default function NuevoRestaurante() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [cantidadMesas, setCantidadMesas] = useState('10');
+  const [cantidadSucursales, setCantidadSucursales] = useState('1');
+  const [nombresSucursales, setNombresSucursales] = useState<string[]>(['Sucursal 1']);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  function cambiarCantidadSucursales(valor: string) {
+    setCantidadSucursales(valor);
+    const n = Math.max(1, Number(valor) || 1);
+    setNombresSucursales((prev) =>
+      Array.from({ length: n }, (_, i) => prev[i] ?? `Sucursal ${i + 1}`)
+    );
+  }
 
   async function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +39,7 @@ export default function NuevoRestaurante() {
           nombre: nombre.trim(),
           email: email.trim(),
           password,
+          sucursales: nombresSucursales.map((sn) => ({ nombre: sn.trim() })),
           cantidadMesas: Number(cantidadMesas),
         }),
       });
@@ -105,8 +116,50 @@ export default function NuevoRestaurante() {
           </div>
 
           <div>
+            <label htmlFor="cantidadSucursales" className="block text-sm font-medium text-gray-700 mb-1">
+              Cantidad de sucursales
+            </label>
+            <input
+              id="cantidadSucursales"
+              type="number"
+              min={1}
+              max={20}
+              value={cantidadSucursales}
+              onChange={(e) => cambiarCantidadSucursales(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              El restaurante es la marca; cada sucursal tendrá sus propias mesas y QRs.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {nombresSucursales.map((sn, i) => (
+              <div key={i}>
+                <label
+                  htmlFor={`sucursalNombre_${i}`}
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Nombre de la sucursal {i + 1}
+                </label>
+                <input
+                  id={`sucursalNombre_${i}`}
+                  type="text"
+                  value={sn}
+                  onChange={(e) =>
+                    setNombresSucursales((prev) =>
+                      prev.map((v, j) => (j === i ? e.target.value : v))
+                    )
+                  }
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div>
             <label htmlFor="cantidadMesas" className="block text-sm font-medium text-gray-700 mb-1">
-              Mesas iniciales (opcional)
+              Mesas por sucursal (opcional)
             </label>
             <input
               id="cantidadMesas"
@@ -118,7 +171,7 @@ export default function NuevoRestaurante() {
               className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Se crearán automáticamente las mesas numeradas del 1 al N. Podés agregar más después.
+              Se crearán automáticamente las mesas numeradas del 1 al N en cada sucursal. Podés agregar más después.
             </p>
           </div>
 

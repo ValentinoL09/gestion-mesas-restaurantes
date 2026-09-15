@@ -13,6 +13,22 @@ export function etiquetaCuenta(metodoPago: string | null): string {
     : '💵 Paga con Efectivo / Transferencia';
 }
 
+export type SucursalConId = { id: string; nombre: string };
+
+/**
+ * Resuelve la sucursal activa del panel: toma el parámetro ?sucursal= solo
+ * si coincide con alguna sucursal real; si no viene (o es inválido) usa la
+ * primera. Devuelve null cuando la marca no tiene sucursales todavía.
+ */
+export function resolverSucursalActiva(
+  sucursales: SucursalConId[],
+  parametro: string | null | undefined
+): string | null {
+  if (!Array.isArray(sucursales) || sucursales.length === 0) return null;
+  if (parametro && sucursales.some((s) => s.id === parametro)) return parametro;
+  return sucursales[0].id;
+}
+
 /**
  * Determina si la URL (o un fragmento de ella) corresponde a un link de
  * recuperación de contraseña. Con flujo implícito el link trae los tokens en

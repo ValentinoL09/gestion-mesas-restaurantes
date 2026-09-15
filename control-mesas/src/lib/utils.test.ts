@@ -5,6 +5,7 @@ import {
   etiquetaCuenta,
   esSesionRecovery,
   urlConRecuperacion,
+  resolverSucursalActiva,
 } from './utils';
 
 describe('minutosTranscurridos', () => {
@@ -114,5 +115,29 @@ describe('esSesionRecovery', () => {
   it('devuelve false para sesión nula o token inválido', () => {
     expect(esSesionRecovery(null)).toBe(false);
     expect(esSesionRecovery({ access_token: 'no-es-un-jwt' })).toBe(false);
+  });
+});
+
+describe('resolverSucursalActiva', () => {
+  const sucursales = [
+    { id: 's-1', nombre: 'Sucursal 1' },
+    { id: 's-2', nombre: 'Sucursal 2' },
+  ];
+
+  it('usa la primera si no viene el parámetro', () => {
+    expect(resolverSucursalActiva(sucursales, undefined)).toBe('s-1');
+  });
+
+  it('usa la primera si el parámetro es inválido', () => {
+    expect(resolverSucursalActiva(sucursales, 's-999')).toBe('s-1');
+  });
+
+  it('devuelve el parámetro cuando coincide con una sucursal real', () => {
+    expect(resolverSucursalActiva(sucursales, 's-2')).toBe('s-2');
+  });
+
+  it('devuelve null si no hay sucursales', () => {
+    expect(resolverSucursalActiva([], 's-1')).toBe(null);
+    expect(resolverSucursalActiva([], undefined)).toBe(null);
   });
 });

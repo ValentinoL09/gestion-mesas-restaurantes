@@ -9,6 +9,7 @@ import type { Tables } from '../../src/lib/database.types';
 type RestauranteConDetalles = Tables<'restaurantes'> & {
   email_dueño: string | null;
   cantidad_mesas: number;
+  cantidad_sucursales: number;
 };
 
 export default function AdminRestaurantes() {
@@ -93,7 +94,7 @@ export default function AdminRestaurantes() {
                     {r.email_dueño ?? 'Sin dueño asignado'}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {r.cantidad_mesas} mesa(s) · Creado el{' '}
+                    {r.cantidad_sucursales} local(es) · {r.cantidad_mesas} mesa(s) · Creado el{' '}
                     {new Date(r.creado_en).toLocaleDateString('es-AR')}
                   </p>
                 </div>

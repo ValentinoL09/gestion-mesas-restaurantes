@@ -16,7 +16,13 @@ const { supabase } = vi.hoisted(() => {
 
 vi.mock('../../../src/lib/supabase', () => ({ supabase }));
 
-const MESA = { id: 'mesa-1', numero: 5, restaurante_id: 'rest-1', estado: 'libre' };
+const MESA = {
+  id: 'mesa-1',
+  numero: 5,
+  restaurante_id: 'rest-1',
+  sucursal_id: 'suc-1',
+  estado: 'libre',
+};
 
 const RESTAURANTE_DEFAULT = {
   url_carta: null,

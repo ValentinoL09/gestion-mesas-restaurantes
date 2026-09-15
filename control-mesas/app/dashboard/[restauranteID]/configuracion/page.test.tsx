@@ -14,6 +14,12 @@ const { supabase } = vi.hoisted(() => {
   return { supabase };
 });
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => '/dashboard/r-1/configuracion',
+  useSearchParams: () => ({ get: () => null }),
+}));
+
 vi.mock('../../../../src/lib/supabase', () => ({ supabase }));
 vi.mock('../../../../src/lib/useProtegerRestaurante', () => ({
   useProtegerRestaurante: () => ({ verificando: false }),

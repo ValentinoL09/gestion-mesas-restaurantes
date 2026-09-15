@@ -9,6 +9,10 @@ import type { Tables } from '../../../src/lib/database.types';
 
 type Restaurante = Tables<'restaurantes'>;
 
+type SucursalConMesas = Tables<'sucursales'> & {
+  cantidad_mesas: number;
+};
+
 export default function AdminDetalle({ params }: { params: Promise<{ restauranteID: string }> }) {
   const { restauranteID } = use(params);
   const { verificando } = useProtegerAdmin();
@@ -26,9 +30,18 @@ export default function AdminDetalle({ params }: { params: Promise<{ restaurante
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
 
+  const [sucursales, setSucursales] = useState<SucursalConMesas[]>([]);
+  const [sucursalNueva, setSucursalNueva] = useState('');
+  const [mesasNuevaSucursal, setMesasNuevaSucursal] = useState('0');
+  const [creandoSucursal, setCreandoSucursal] = useState(false);
+
   const cargar = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/restaurantes/${restauranteID}`, { cache: 'no-store' });
+      const [res, sucRes] = await Promise.all([
+        fetch(`/api/admin/restaurantes/${restauranteID}`, { cache: 'no-store' }),
+        fetch(`/api/admin/restaurantes/${restauranteID}/sucursales`, { cache: 'no-store' }),
+      ]);
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al cargar el restaurante.');
 
@@ -38,6 +51,9 @@ export default function AdminDetalle({ params }: { params: Promise<{ restaurante
       setColorPrimario(r.color_primario ?? '#2563eb');
       setColorSecundario(r.color_secundario ?? '#0a0a0a');
       setLogoUrl(r.logo_url ?? null);
+
+      const sucData = await sucRes.json();
+      if (sucRes.ok) setSucursales(sucData.sucursales ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar el restaurante.');
     } finally {
@@ -139,6 +155,58 @@ export default function AdminDetalle({ params }: { params: Promise<{ restaurante
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error || 'No se pudo eliminar el restaurante.');
+    }
+  }
+
+  async function crearSucursal() {
+    setError('');
+    setCreandoSucursal(true);
+
+    const res = await fetch(`/api/admin/restaurantes/${restauranteID}/sucursales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: sucursalNueva.trim() || null,
+        cantidadMesas: Number(mesasNuevaSucursal),
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setError(data.error || 'No se pudo crear la sucursal.');
+    } else {
+      setSucursalNueva('');
+      setMesasNuevaSucursal('0');
+      setMensaje('✅ Sucursal creada.');
+      setTimeout(() => setMensaje(''), 3000);
+      cargar();
+    }
+    setCreandoSucursal(false);
+  }
+
+  async function eliminarSucursal(s: SucursalConMesas) {
+    setError('');
+    if (
+      !window.confirm(
+        `¿Eliminar la sucursal "${s.nombre}"? Se borrarán sus mesas, peticiones y sesiones.`
+      )
+    ) {
+      return;
+    }
+
+    const res = await fetch(
+      `/api/admin/restaurantes/${restauranteID}/sucursales/${s.id}`,
+      { method: 'DELETE' }
+    );
+
+    if (res.ok) {
+      setMensaje('✅ Sucursal eliminada.');
+      setTimeout(() => setMensaje(''), 3000);
+      cargar();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || 'No se pudo eliminar la sucursal.');
     }
   }
 
@@ -275,6 +343,73 @@ export default function AdminDetalle({ params }: { params: Promise<{ restaurante
           >
             {guardando ? 'Guardando...' : 'Guardar cambios'}
           </button>
+        </section>
+
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+          <h2 className="text-lg font-bold text-gray-800">Sucursales ({sucursales.length})</h2>
+
+          {sucursales.length === 0 ? (
+            <p className="text-gray-400 text-center italic">Este restaurante no tiene sucursales.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {sucursales.map((s) => (
+                <li key={s.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-800 truncate">{s.nombre}</p>
+                    <p className="text-xs text-gray-400">
+                      {s.cantidad_mesas} mesa(s)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => eliminarSucursal(s)}
+                    disabled={sucursales.length <= 1}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40"
+                    title={sucursales.length <= 1 ? 'No se puede eliminar la única sucursal' : ''}
+                  >
+                    Eliminar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="border-t border-gray-100 pt-4 space-y-4">
+            <p className="text-sm font-medium text-gray-700">Agregar sucursal</p>
+            <div>
+              <label htmlFor="sucursalNombreNueva" className="block text-sm font-medium text-gray-700 mb-1">
+                Nombre (opcional)
+              </label>
+              <input
+                id="sucursalNombreNueva"
+                type="text"
+                value={sucursalNueva}
+                onChange={(e) => setSucursalNueva(e.target.value)}
+                placeholder={`Ej: Sucursal ${sucursales.length + 1}`}
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+              />
+            </div>
+            <div>
+              <label htmlFor="mesasNuevaSucursal" className="block text-sm font-medium text-gray-700 mb-1">
+                Mesas (opcional)
+              </label>
+              <input
+                id="mesasNuevaSucursal"
+                type="number"
+                min={0}
+                max={100}
+                value={mesasNuevaSucursal}
+                onChange={(e) => setMesasNuevaSucursal(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+              />
+            </div>
+            <button
+              onClick={crearSucursal}
+              disabled={creandoSucursal}
+              className="w-full py-3 bg-[var(--t-primario)] text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:bg-gray-400"
+            >
+              {creandoSucursal ? 'Creando...' : '+ Agregar sucursal'}
+            </button>
+          </div>
         </section>
       </main>
     </div>

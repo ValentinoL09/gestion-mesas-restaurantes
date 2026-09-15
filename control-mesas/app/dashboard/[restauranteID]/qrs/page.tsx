@@ -1,11 +1,13 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../../src/lib/supabase';
 import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
 import NavDashboard from '../_nav';
 import { useTema } from '../_tema';
-import { urlMesaQR } from '../../../../src/lib/utils';
+import { useSucursales } from '../_sucursales';
+import { resolverSucursalActiva, urlMesaQR } from '../../../../src/lib/utils';
 import type { Tables } from '../../../../src/lib/database.types';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -15,22 +17,42 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
   const { restauranteID } = use(params);
   const { verificando } = useProtegerRestaurante(restauranteID);
   const tema = useTema();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sucursales = useSucursales();
+
+  const parametro = searchParams.get('sucursal');
+  const sucursalActiva = resolverSucursalActiva(sucursales, parametro);
+  const sucursalActual = sucursales.find((s) => s.id === sucursalActiva);
+
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [cargando, setCargando] = useState(true);
   const [urlBase] = useState(() =>
     typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   );
 
+  useEffect(() => {
+    // Si no hay ?sucursal= (o es inválido) fijamos la primera en la URL.
+    if (sucursalActiva && sucursales.length > 0 && parametro !== sucursalActiva) {
+      router.replace(`/dashboard/${restauranteID}/qrs?sucursal=${sucursalActiva}`);
+    }
+  }, [sucursalActiva, sucursales.length, parametro, restauranteID, router]);
+
   const cargarMesas = useCallback(async () => {
+    if (!sucursalActiva) {
+      setCargando(false);
+      return;
+    }
+
     const { data } = await supabase
       .from('mesas')
       .select('*')
-      .eq('restaurante_id', restauranteID)
+      .eq('sucursal_id', sucursalActiva)
       .order('numero');
     
     if (data) setMesas(data);
     setCargando(false);
-  }, [restauranteID]);
+  }, [sucursalActiva]);
 
   useEffect(() => {
     const inicializar = async () => {
@@ -40,11 +62,17 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
   }, [cargarMesas]);
 
   async function agregarMesa() {
+    if (!sucursalActiva) return;
     const siguienteNumero = mesas.length > 0 ? Math.max(...mesas.map(m => m.numero)) + 1 : 1;
     
     const { error } = await supabase
       .from('mesas')
-      .insert({ restaurante_id: restauranteID, numero: siguienteNumero, estado: 'libre' });
+      .insert({
+        restaurante_id: restauranteID,
+        sucursal_id: sucursalActiva,
+        numero: siguienteNumero,
+        estado: 'libre',
+      });
       
     if (error) {
       console.error("Error al agregar mesa:", JSON.stringify(error, null, 2));
@@ -66,6 +94,11 @@ export default function GeneradorQRs({ params }: { params: Promise<{ restaurante
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Generador de QRs</h1>
           <p className="text-gray-500 text-sm mt-1">Crea nuevas mesas o imprime la hoja (Ctrl + P).</p>
+          {sucursalActual && (
+            <p className="text-gray-500 text-sm mt-1">
+              Sucursal: <span className="font-medium text-gray-700">{sucursalActual.nombre}</span>
+            </p>
+          )}
         </div>
         <div className="space-x-4">
           <button 
