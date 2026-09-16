@@ -10,9 +10,18 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-gray-100 selection:bg-blue-600/40">
       {/* Navegación */}
-      <nav className="flex justify-between items-center px-6 py-5 max-w-7xl mx-auto">
-        <Link href="/" className="flex items-center gap-4">
-          <Image src="/logo2.png" alt="SmartTable" width={120} height={120} className="rounded-xl object-contain" priority />
+      {/* CAMBIO: Se ajustó el padding (pt-4 pb-1) para tener menos separación abajo */}
+      <nav className="flex justify-between items-center px-6 pt-4 pb-1 max-w-7xl mx-auto">
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/logo2.png"
+            alt="SmartTable"
+            width={260} 
+            height={260}
+            // CAMBIO: Se agrandó el logo cambiando h-16 por h-20 sm:h-24
+            className="h-22 sm:h-28 w-auto object-contain"
+            priority
+          />
           <span className="text-2xl font-black tracking-tight text-white">
             Smart<span className="text-blue-500">Table</span>
           </span>
@@ -34,8 +43,9 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(37,99,235,0.18),transparent_55%)] pointer-events-none" />
-          <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-20 text-center lg:pt-24">
-            <p className="text-xs font-bold tracking-[0.25em] text-blue-500 uppercase mb-5">
+          {/* CAMBIO: Se redujo el padding superior (pt-8 lg:pt-10) para acercar el texto al recuadro de arriba */}
+          <div className="relative max-w-7xl mx-auto px-6 pt-12 pb-20 text-center lg:pt-15">
+            <p className="text-xl font-bold tracking-[0.25em] text-blue-500 uppercase mb-5">
               Gestión de mesas por QR
             </p>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
