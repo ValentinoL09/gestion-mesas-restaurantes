@@ -27,7 +27,7 @@ export default function NavAdmin({
     <nav className="w-full flex items-center gap-1 bg-white border-b border-gray-200 px-6 py-3 shadow-sm print:hidden">
       <Link href="/admin" className="flex items-center gap-2.5 mr-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="SmartTable" className="h-16 w-auto object-contain" />
+        <img src="/logo.png" alt="SmartTable" className="h-22 sm:h-28 w-auto object-contain" />
         <span className="text-xl font-black tracking-tighter text-gray-900">Admin</span>
       </Link>
       {actual !== 'lista' && (

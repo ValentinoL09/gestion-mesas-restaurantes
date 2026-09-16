@@ -133,7 +133,7 @@ export default function ConfiguracionRestaurante({ params }: { params: Promise<{
               <img
                 src={logoVisto}
                 alt="Logo del restaurante"
-                className="w-16 h-16 rounded-xl border border-gray-200 object-contain bg-white"
+                className="h-22 sm:h-28 rounded-xl border border-gray-200 object-contain bg-white"
               />
               <label className="px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
                 Subir logo

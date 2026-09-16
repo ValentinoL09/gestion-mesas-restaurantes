@@ -49,7 +49,7 @@ export default function NavDashboard({
       <Link href="/" className="flex items-center gap-2.5 mr-6">
         {tema.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={tema.logoUrl} alt={tema.nombre} className="w-9 h-9 rounded-lg object-contain" />
+          <img src={tema.logoUrl} alt={tema.nombre} className="h-22 sm:h-28 rounded-lg object-contain" />
         )}
         <span className="text-xl font-black tracking-tighter text-gray-900">{tema.nombre}</span>
       </Link>
