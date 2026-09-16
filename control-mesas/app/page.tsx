@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import FormContacto from './_components/FormContacto';
-import { EMAIL_COMERCIAL, NOMBRE_PRODUCTO } from '../src/lib/contacto';
+import { EMAIL_COMERCIAL, NOMBRE_PRODUCTO, urlGmailCompose } from '../src/lib/contacto';
 
 const pasoClaseIcono =
   'w-12 h-12 bg-blue-600/10 text-blue-400 rounded-xl flex items-center justify-center text-xl font-black';
@@ -12,7 +12,7 @@ export default function LandingPage() {
       {/* Navegación */}
       <nav className="flex justify-between items-center px-6 py-5 max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-4">
-          <Image src="/logo.png" alt="SmartTable" width={120} height={120} className="rounded-xl object-contain" priority />
+          <Image src="/logo2.png" alt="SmartTable" width={120} height={120} className="rounded-xl object-contain" priority />
           <span className="text-2xl font-black tracking-tight text-white">
             Smart<span className="text-blue-500">Table</span>
           </span>
@@ -145,7 +145,7 @@ export default function LandingPage() {
         </section>
 
         {/* Precios */}
-        <section className="border-y border-gray-800 bg-gray-900/40">
+        <section id="planes" className="border-y border-gray-800 bg-gray-900/40">
           <div className="max-w-5xl mx-auto px-6 py-20">
             <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6">
               Planes a medida de tu salón
@@ -217,7 +217,9 @@ export default function LandingPage() {
               <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
                 <p className="text-sm text-gray-400 mb-2">Prefieres escribirnos directo?</p>
                 <a
-                  href={`mailto:${EMAIL_COMERCIAL}`}
+                  href={urlGmailCompose()}
+                  target="_blank"
+                  rel="noopener"
                   className="text-xl font-bold text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   {EMAIL_COMERCIAL}
@@ -232,14 +234,86 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-gray-400">
-            © {new Date().getFullYear()} {NOMBRE_PRODUCTO}. Todos los derechos reservados.
-          </span>
-          <a href={`mailto:${EMAIL_COMERCIAL}`} className="text-sm text-gray-400 hover:text-white transition-colors">
-            {EMAIL_COMERCIAL}
-          </a>
+      <footer className="border-t border-gray-800 bg-gray-950">
+        <div className="max-w-7xl mx-auto px-6 py-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Marca */}
+          <div>
+            <Link href="/" className="flex items-center gap-3">
+              <Image src="/logo2.png" alt={NOMBRE_PRODUCTO} width={56} height={56} className="rounded-lg object-contain" />
+              <span className="text-xl font-black tracking-tight text-white">
+                Smart<span className="text-blue-500">Table</span>
+              </span>
+            </Link>
+            <p className="mt-4 text-sm text-gray-400 leading-relaxed">
+              Gestión de mesas por QR para tu restaurante. Sin apps, sin esperas, en tiempo real.
+            </p>
+          </div>
+
+          {/* Navegación */}
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Navegación</h3>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href="#como-funciona" className="text-gray-400 hover:text-white transition-colors">
+                  Cómo funciona
+                </a>
+              </li>
+              <li>
+                <a href="#planes" className="text-gray-400 hover:text-white transition-colors">
+                  Planes
+                </a>
+              </li>
+              <li>
+                <a href="#contacto" className="text-gray-400 hover:text-white transition-colors">
+                  Contacto
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contacto */}
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Contacto</h3>
+            <a
+              href={urlGmailCompose()}
+              target="_blank"
+              rel="noopener"
+              className="text-sm text-blue-400 hover:text-blue-300 transition-colors break-all"
+            >
+              {EMAIL_COMERCIAL}
+            </a>
+            <div className="mt-4">
+              <a
+                href="#contacto"
+                className="inline-block px-5 py-2.5 text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors shadow-sm"
+              >
+                Solicitar Demo
+              </a>
+            </div>
+          </div>
+
+          {/* Redes (placeholders) */}
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Seguinos</h3>
+            <ul className="space-y-3 text-sm">
+              {['Instagram', 'WhatsApp', 'X'].map((red) => (
+                <li key={red}>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label={red}>
+                    {red}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800">
+          <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-sm text-gray-500">
+              © {new Date().getFullYear()} {NOMBRE_PRODUCTO}. Todos los derechos reservados.
+            </span>
+            <span className="text-sm text-gray-600">Hecho con ♥ para restaurantes.</span>
+          </div>
         </div>
       </footer>
     </div>
