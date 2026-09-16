@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useProtegerAdmin } from '../../src/lib/useProtegerAdmin';
 import NavAdmin from './_nav';
@@ -17,6 +17,17 @@ export default function AdminRestaurantes() {
   const [restaurantes, setRestaurantes] = useState<RestauranteConDetalles[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+
+  const restaurantesFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return restaurantes;
+    return restaurantes.filter(
+      (r) =>
+        r.nombre.toLowerCase().includes(q) ||
+        (r.email_dueño ?? '').toLowerCase().includes(q)
+    );
+  }, [busqueda, restaurantes]);
 
   const cargar = useCallback(async () => {
     try {
@@ -75,15 +86,34 @@ export default function AdminRestaurantes() {
           </Link>
         </div>
 
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre o correo…"
+            className="w-full sm:max-w-xs p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all bg-white text-gray-900"
+          />
+          {restaurantes.length > 0 && (
+            <p className="text-sm text-gray-500">
+              Mostrando {restaurantesFiltrados.length} de {restaurantes.length} restaurantes
+            </p>
+          )}
+        </div>
+
         {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium">{error}</div>}
 
         {restaurantes.length === 0 ? (
           <p className="text-gray-400 text-center italic mt-10">
             Todavía no hay restaurantes. Creá el primero.
           </p>
+        ) : restaurantesFiltrados.length === 0 ? (
+          <p className="text-gray-400 text-center italic mt-10">
+            No se encontraron restaurantes con “{busqueda.trim()}”.
+          </p>
         ) : (
           <ul className="space-y-4">
-            {restaurantes.map((r) => (
+            {restaurantesFiltrados.map((r) => (
               <li
                 key={r.id}
                 className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center gap-4"
