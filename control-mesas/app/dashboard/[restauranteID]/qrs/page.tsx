@@ -1,143 +1,47 @@
-'use client';
-
-import { use, useCallback, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '../../../../src/lib/supabase';
-import { useProtegerRestaurante } from '../../../../src/lib/useProtegerRestaurante';
-import NavDashboard from '../_nav';
-import { useTema } from '../_tema';
-import { useSucursales } from '../_sucursales';
-import { resolverSucursalActiva, urlMesaQR } from '../../../../src/lib/utils';
+import { createClient } from '../../../../src/lib/supabase-server';
+import { resolverSucursalActiva } from '../../../../src/lib/utils';
 import type { Tables } from '../../../../src/lib/database.types';
-import { QRCodeSVG } from 'qrcode.react';
+import GeneradorQRs from './_qrs';
 
-type Mesa = Tables<'mesas'>;
+export default async function PaginaQRs({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ restauranteID: string }>;
+  searchParams: Promise<{ sucursal?: string | string[] }>;
+}) {
+  const { restauranteID } = await params;
+  const sp = await searchParams;
+  const parametro = typeof sp.sucursal === 'string' ? sp.sucursal : null;
 
-export default function GeneradorQRs({ params }: { params: Promise<{ restauranteID: string }> }) {
-  const { restauranteID } = use(params);
-  const { verificando } = useProtegerRestaurante(restauranteID);
-  const tema = useTema();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const sucursales = useSucursales();
+  const supabase = await createClient();
 
-  const parametro = searchParams.get('sucursal');
+  const { data: sucursalesData } = await supabase
+    .from('sucursales')
+    .select('id, nombre')
+    .eq('restaurante_id', restauranteID)
+    .order('nombre');
+
+  const sucursales = sucursalesData ?? [];
   const sucursalActiva = resolverSucursalActiva(sucursales, parametro);
-  const sucursalActual = sucursales.find((s) => s.id === sucursalActiva);
+  const sucursalActual = sucursales.find((s) => s.id === sucursalActiva) ?? null;
 
-  const [mesas, setMesas] = useState<Mesa[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [urlBase] = useState(() =>
-    typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-  );
-
-  useEffect(() => {
-    // Si no hay ?sucursal= (o es inválido) fijamos la primera en la URL.
-    if (sucursalActiva && sucursales.length > 0 && parametro !== sucursalActiva) {
-      router.replace(`/dashboard/${restauranteID}/qrs?sucursal=${sucursalActiva}`);
-    }
-  }, [sucursalActiva, sucursales.length, parametro, restauranteID, router]);
-
-  const cargarMesas = useCallback(async () => {
-    if (!sucursalActiva) {
-      setCargando(false);
-      return;
-    }
-
+  let mesas: Tables<'mesas'>[] = [];
+  if (sucursalActiva) {
     const { data } = await supabase
       .from('mesas')
       .select('*')
       .eq('sucursal_id', sucursalActiva)
       .order('numero');
-    
-    if (data) setMesas(data);
-    setCargando(false);
-  }, [sucursalActiva]);
-
-  useEffect(() => {
-    const inicializar = async () => {
-      await cargarMesas();
-    };
-    inicializar();
-  }, [cargarMesas]);
-
-  async function agregarMesa() {
-    if (!sucursalActiva) return;
-    const siguienteNumero = mesas.length > 0 ? Math.max(...mesas.map(m => m.numero)) + 1 : 1;
-    
-    const { error } = await supabase
-      .from('mesas')
-      .insert({
-        restaurante_id: restauranteID,
-        sucursal_id: sucursalActiva,
-        numero: siguienteNumero,
-        estado: 'libre',
-      });
-      
-    if (error) {
-      console.error("Error al agregar mesa:", JSON.stringify(error, null, 2));
-    } else {
-      cargarMesas();
-    }
+    mesas = data ?? [];
   }
 
-  if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
-  if (cargando) return <div className="p-10 text-center">Cargando QRs...</div>;
-
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <NavDashboard restauranteID={restauranteID} actual="qrs" />
-      <div className="p-8">
-      
-      {/* Controles (Ocultos al imprimir) */}
-      <div className="print:hidden max-w-4xl mx-auto mb-10 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Generador de QRs</h1>
-          <p className="text-gray-500 text-sm mt-1">Crea nuevas mesas o imprime la hoja (Ctrl + P).</p>
-          {sucursalActual && (
-            <p className="text-gray-500 text-sm mt-1">
-              Sucursal: <span className="font-medium text-gray-700">{sucursalActual.nombre}</span>
-            </p>
-          )}
-        </div>
-        <div className="space-x-4">
-          <button 
-            onClick={agregarMesa}
-            className="px-6 py-3 bg-[var(--t-primario)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-sm"
-          >
-            + Agregar Mesa {mesas.length > 0 ? Math.max(...mesas.map(m => m.numero)) + 1 : 1}
-          </button>
-          <button 
-            onClick={() => window.print()}
-            className="px-6 py-3 bg-[var(--t-secundario)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-sm"
-          >
-            Imprimir QRs
-          </button>
-        </div>
-      </div>
-
-      {/* Grilla de QRs (Optimizada para impresión) */}
-      <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-8">
-        {mesas.map((mesa) => {
-          const urlQR = urlMesaQR(urlBase, mesa.id);
-          
-          return (
-            <div key={mesa.id} className="bg-white p-6 rounded-2xl border-2 border-gray-200 flex flex-col items-center text-center shadow-sm break-inside-avoid print:shadow-none print:border-gray-400">
-              <h2 className="text-xs font-bold tracking-widest text-[var(--t-primario)] uppercase mb-1">{tema.nombre}</h2>
-              <h2 className="text-3xl font-black text-gray-800 mb-4">MESA {mesa.numero}</h2>
-              
-              <div className="bg-white p-2 rounded-xl border border-gray-100 mb-4">
-                <QRCodeSVG value={urlQR} size={150} level="H" includeMargin={false} />
-              </div>
-              
-              <p className="text-xs text-gray-400 truncate w-full" title={urlQR}>
-                Escanear para acceder
-              </p>
-            </div>
-          );
-        })}
-      </div>
-      </div>
-    </div>
+    <GeneradorQRs
+      restauranteID={restauranteID}
+      sucursalActiva={sucursalActiva}
+      sucursalNombre={sucursalActual?.nombre ?? null}
+      mesasIniciales={mesas}
+    />
   );
 }

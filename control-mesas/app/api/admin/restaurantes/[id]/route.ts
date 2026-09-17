@@ -3,24 +3,6 @@ import { obtenerAdmin } from '../../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../../src/lib/supabase-admin';
 import type { TablesUpdate } from '../../../../../src/lib/database.types';
 
-export async function GET(request: NextRequest, ctx: RouteContext<'/api/admin/restaurantes/[id]'>) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
-
-  const { id } = await ctx.params;
-
-  const { data: restaurante, error } = await supabaseAdmin
-    .from('restaurantes')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  if (!restaurante) return Response.json({ error: 'Restaurante no encontrado.' }, { status: 404 });
-
-  return Response.json({ restaurante });
-}
-
 export async function PUT(request: NextRequest, ctx: RouteContext<'/api/admin/restaurantes/[id]'>) {
   const admin = await obtenerAdmin();
   if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });

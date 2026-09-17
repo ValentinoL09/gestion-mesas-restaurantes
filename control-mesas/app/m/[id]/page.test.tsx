@@ -1,8 +1,8 @@
-import { Suspense, act } from 'react';
+import { act } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import PantallaComensal from './page';
+import PantallaComensal from './_comensal';
 
 const { supabase } = vi.hoisted(() => {
   const supabase = {
@@ -22,9 +22,16 @@ const MESA = {
   restaurante_id: 'rest-1',
   sucursal_id: 'suc-1',
   estado: 'libre',
+  qr_url: null,
 };
 
-const RESTAURANTE_DEFAULT = {
+const RESTAURANTE_DEFAULT: {
+  url_carta: string | null;
+  logo_url: string | null;
+  color_primario: string;
+  color_secundario: string;
+  nombre: string;
+} = {
   url_carta: null,
   logo_url: null,
   color_primario: '#7c3aed',
@@ -38,8 +45,6 @@ function configurarSupabase(
 ) {
   (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((tabla: string) => {
     const respuestas: Record<string, unknown> = {
-      mesas: { data: MESA, error: null },
-      restaurantes_publico: { data: RESTAURANTE_DEFAULT, error: null },
       peticiones: { data: [], error: null },
       sesiones_clientes: { data: [], error: null },
       ...sobre,
@@ -71,16 +76,23 @@ function configurarSupabase(
   return registrosInserts;
 }
 
-async function renderComensal() {
-  let utils: ReturnType<typeof render> | undefined;
-  await act(async () => {
-    utils = render(
-      <Suspense fallback={null}>
-        <PantallaComensal params={Promise.resolve({ id: 'mesa-1' })} />
-      </Suspense>
+function renderComensal(
+  props: Partial<{
+    mesa: typeof MESA;
+    restaurante: typeof RESTAURANTE_DEFAULT | null;
+    tiposPendientes: string[];
+  }> = {}
+) {
+  return act(async () => {
+    render(
+      <PantallaComensal
+        id="mesa-1"
+        mesa={props.mesa ?? MESA}
+        restaurante={props.restaurante ?? RESTAURANTE_DEFAULT}
+        tiposPendientes={props.tiposPendientes ?? []}
+      />
     );
   });
-  return utils!;
 }
 
 beforeEach(() => {
@@ -101,10 +113,9 @@ describe('PantallaComensal', () => {
 
   it('bloquea la pantalla si la mesa está ocupada por OTRO dispositivo', async () => {
     configurarSupabase({
-      mesas: { data: { ...MESA, estado: 'ocupada' }, error: null },
       sesiones_clientes: { data: [{ id: 'otro-token' }], error: null },
     });
-    await renderComensal();
+    await renderComensal({ mesa: { ...MESA, estado: 'ocupada' } });
 
     expect(screen.getByRole('heading', { name: 'Mesa en Uso' })).toBeInTheDocument();
     expect(supabase.rpc).not.toHaveBeenCalled();
@@ -139,10 +150,8 @@ describe('PantallaComensal', () => {
   });
 
   it('muestra la carta digital y "O solicita asistencia" cuando el restaurante tiene url_carta', async () => {
-    configurarSupabase({
-      restaurantes_publico: { data: { ...RESTAURANTE_DEFAULT, url_carta: '/carta.pdf' }, error: null },
-    });
-    await renderComensal();
+    configurarSupabase();
+    await renderComensal({ restaurante: { ...RESTAURANTE_DEFAULT, url_carta: '/carta.pdf' } });
 
     expect(screen.getByRole('link', { name: /Ver Carta Digital/ })).toBeInTheDocument();
     expect(screen.getByText(/solicita asistencia/)).toBeInTheDocument();
@@ -167,10 +176,8 @@ describe('PantallaComensal', () => {
   });
 
   it('muestra el logo del restaurante cuando lo tiene', async () => {
-    configurarSupabase({
-      restaurantes_publico: { data: { ...RESTAURANTE_DEFAULT, logo_url: '/logo-pizzeria.png' }, error: null },
-    });
-    await renderComensal();
+    configurarSupabase();
+    await renderComensal({ restaurante: { ...RESTAURANTE_DEFAULT, logo_url: '/logo-pizzeria.png' } });
 
     expect(screen.getByRole('img', { name: 'Pizzería Don Gato' })).toBeInTheDocument();
     expect(screen.queryByText('Pizzería Don Gato')).not.toBeInTheDocument();

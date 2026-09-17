@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useProtegerAdmin } from '../../../src/lib/useProtegerAdmin';
 import NavAdmin from '../_nav';
 
 export default function NuevoRestaurante() {
-  const { verificando } = useProtegerAdmin();
   const router = useRouter();
 
   const [nombre, setNombre] = useState('');
@@ -56,8 +54,6 @@ export default function NuevoRestaurante() {
       setCargando(false);
     }
   }
-
-  if (verificando) return <div className="p-10 text-center">Verificando acceso...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
