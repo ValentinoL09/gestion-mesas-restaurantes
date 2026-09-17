@@ -2,26 +2,6 @@ import { NextRequest } from 'next/server';
 import { obtenerAdmin } from '../../../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../../../src/lib/supabase-admin';
 
-export async function GET(
-  request: NextRequest,
-  ctx: RouteContext<'/api/admin/restaurantes/[id]/mesas'>
-) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
-
-  const { id } = await ctx.params;
-  const sucursalId = new URL(request.url).searchParams.get('sucursalId');
-
-  let query = supabaseAdmin.from('mesas').select('*').eq('restaurante_id', id);
-  if (sucursalId) query = query.eq('sucursal_id', sucursalId);
-
-  const { data: mesas, error } = await query.order('numero');
-
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  return Response.json({ mesas: mesas ?? [] });
-}
-
 export async function POST(
   request: NextRequest,
   ctx: RouteContext<'/api/admin/restaurantes/[id]/mesas'>

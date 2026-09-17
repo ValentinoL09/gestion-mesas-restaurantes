@@ -2,37 +2,6 @@ import { NextRequest } from 'next/server';
 import { obtenerAdmin } from '../../../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../../../src/lib/supabase-admin';
 
-export async function GET(
-  _request: NextRequest,
-  ctx: RouteContext<'/api/admin/restaurantes/[id]/sucursales'>
-) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
-
-  const { id } = await ctx.params;
-
-  const { data: sucursales, error } = await supabaseAdmin
-    .from('sucursales')
-    .select('*')
-    .eq('restaurante_id', id)
-    .order('creado_en');
-
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  const { data: mesas } = await supabaseAdmin.from('mesas').select('sucursal_id');
-  const conteoMesas = new Map<string, number>();
-  mesas?.forEach((m) =>
-    conteoMesas.set(m.sucursal_id, (conteoMesas.get(m.sucursal_id) ?? 0) + 1)
-  );
-
-  return Response.json({
-    sucursales: (sucursales ?? []).map((s) => ({
-      ...s,
-      cantidad_mesas: conteoMesas.get(s.id) ?? 0,
-    })),
-  });
-}
-
 export async function POST(
   request: NextRequest,
   ctx: RouteContext<'/api/admin/restaurantes/[id]/sucursales'>

@@ -2,7 +2,7 @@ import { act } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ConfiguracionRestaurante from './page';
+import FormConfiguracion from './_form';
 
 const { supabase } = vi.hoisted(() => {
   const supabase = {
@@ -15,29 +15,23 @@ const { supabase } = vi.hoisted(() => {
 });
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
   usePathname: () => '/dashboard/r-1/configuracion',
   useSearchParams: () => ({ get: () => null }),
 }));
 
 vi.mock('../../../../src/lib/supabase', () => ({ supabase }));
-vi.mock('../../../../src/lib/useProtegerRestaurante', () => ({
-  useProtegerRestaurante: () => ({ verificando: false }),
-}));
 
-const RESTAURANTE: Record<string, unknown> = {
-  nombre: 'Mi Local',
-  url_carta: null,
+const INICIAL_DEFAULT: { nombre: string; url_carta: string; logo_url: string | null } = {
+  nombre: '',
+  url_carta: '',
   logo_url: null,
 };
 
-function configurarSupabase(
-  restaurante: Record<string, unknown> = {},
-  respuestasUpdate: { error: null } | { error: Error } = { error: null }
-) {
+function configurarSupabase(respuestasUpdate: { error: null } | { error: Error } = { error: null }) {
   const registrosUpdate: { payload: unknown }[] = [];
 
-  (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((tabla: string) => {
+  (supabase.from as ReturnType<typeof vi.fn>).mockImplementation(() => {
     const target = {
       select: vi.fn(() => target),
       update: vi.fn((payload: unknown) => {
@@ -45,11 +39,7 @@ function configurarSupabase(
         return target;
       }),
       eq: vi.fn(() => target),
-      single: vi.fn(() =>
-        Promise.resolve(
-          tabla === 'restaurantes' ? { data: { ...RESTAURANTE, ...restaurante }, error: null } : { data: null, error: null }
-        )
-      ),
+      single: vi.fn(() => Promise.resolve({ data: null, error: null })),
       then: (onFulfilled: (v: unknown) => unknown) => Promise.resolve(respuestasUpdate).then(onFulfilled),
     };
     return target;
@@ -64,9 +54,9 @@ function configurarSupabase(
   return registrosUpdate;
 }
 
-async function renderConfiguracion() {
+async function renderConfiguracion(inicial: typeof INICIAL_DEFAULT = INICIAL_DEFAULT) {
   await act(async () => {
-    render(<ConfiguracionRestaurante params={Promise.resolve({ restauranteID: 'r-1' })} />);
+    render(<FormConfiguracion restauranteID="r-1" initial={inicial} />);
   });
 }
 
@@ -76,10 +66,13 @@ beforeEach(() => {
   URL.createObjectURL = vi.fn(() => 'blob:preview-url');
 });
 
-describe('ConfiguracionRestaurante', () => {
-  it('carga nombre, url_carta y logo del restaurante', async () => {
-    configurarSupabase({ nombre: 'Pizzeria Don Gato', url_carta: '/carta.pdf', logo_url: '/logo-don-gato.png' });
-    await renderConfiguracion();
+describe('FormConfiguracion', () => {
+  it('muestra nombre, url_carta y logo iniciales del restaurante', async () => {
+    await renderConfiguracion({
+      nombre: 'Pizzeria Don Gato',
+      url_carta: '/carta.pdf',
+      logo_url: '/logo-don-gato.png',
+    });
 
     expect(screen.getByDisplayValue('Pizzeria Don Gato')).toBeInTheDocument();
     expect(screen.getByDisplayValue('/carta.pdf')).toBeInTheDocument();
@@ -87,15 +80,14 @@ describe('ConfiguracionRestaurante', () => {
   });
 
   it('muestra el logo por defecto cuando el restaurante no tiene logo', async () => {
-    configurarSupabase();
     await renderConfiguracion();
 
     expect(screen.getByRole('img', { name: 'Logo del restaurante' })).toHaveAttribute('src', '/logo.png');
   });
 
   it('guarda nombre y url_carta sin tocar el logo', async () => {
-    const updates = configurarSupabase({ nombre: 'Local', logo_url: '/logo.png' });
-    await renderConfiguracion();
+    const updates = configurarSupabase();
+    await renderConfiguracion({ nombre: 'Local', url_carta: '', logo_url: '/logo.png' });
 
     await userEvent.clear(screen.getByLabelText('Nombre del local'));
     await userEvent.type(screen.getByLabelText('Nombre del local'), 'Local Viejo');
@@ -138,8 +130,8 @@ describe('ConfiguracionRestaurante', () => {
   });
 
   it('quita el logo al guardar', async () => {
-    const updates = configurarSupabase({ logo_url: 'https://cdn.test/logos/r-1/logo' });
-    await renderConfiguracion();
+    const updates = configurarSupabase();
+    await renderConfiguracion({ nombre: '', url_carta: '', logo_url: 'https://cdn.test/logos/r-1/logo' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Quitar logo' }));
     expect(screen.getByText(/Se quitará el logo/)).toBeInTheDocument();

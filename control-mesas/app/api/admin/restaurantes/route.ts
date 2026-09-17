@@ -2,46 +2,6 @@ import { NextRequest } from 'next/server';
 import { obtenerAdmin } from '../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../src/lib/supabase-admin';
 
-export async function GET() {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
-
-  const { data: restaurantes, error } = await supabaseAdmin
-    .from('restaurantes')
-    .select('*')
-    .order('creado_en', { ascending: false });
-
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  const { data: usuarios } = await supabaseAdmin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-  const correos = new Map<string, string>();
-  usuarios?.users.forEach((u) => correos.set(u.id, u.email ?? ''));
-
-  const { data: mesas } = await supabaseAdmin.from('mesas').select('restaurante_id');
-  const conteoMesas = new Map<string, number>();
-  mesas?.forEach((m) =>
-    conteoMesas.set(m.restaurante_id, (conteoMesas.get(m.restaurante_id) ?? 0) + 1)
-  );
-
-  const { data: sucursales } = await supabaseAdmin.from('sucursales').select('restaurante_id');
-  const conteoSucursales = new Map<string, number>();
-  sucursales?.forEach((s) =>
-    conteoSucursales.set(s.restaurante_id, (conteoSucursales.get(s.restaurante_id) ?? 0) + 1)
-  );
-
-  return Response.json({
-    restaurantes: (restaurantes ?? []).map((r) => ({
-      ...r,
-      email_dueño: r.usuario_id ? correos.get(r.usuario_id) ?? null : null,
-      cantidad_mesas: conteoMesas.get(r.id) ?? 0,
-      cantidad_sucursales: conteoSucursales.get(r.id) ?? 0,
-    })),
-  });
-}
-
 export async function POST(request: NextRequest) {
   const admin = await obtenerAdmin();
   if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
