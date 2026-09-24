@@ -13,6 +13,7 @@ La aplicación vive en [`control-mesas/`](./control-mesas), junto a su configura
 - **QR estáticos** por mesa, listos para imprimir.
 - **Múltiples sucursales** por restaurante, con numeración de mesas independiente por local.
 - **Configuración de marca**: logo y colores por restaurante (storage + theming).
+- **Reseñas de Google**: botón persistente en la pantalla del comensal y recordatorio al pedir la cuenta, con la URL configurable por restaurante.
 - **Panel de administración** (`/admin`) para crear y gestionar restaurantes, sus sucursales y sus mesas.
 
 ## Stack
@@ -50,7 +51,7 @@ control-mesas/e2e/            Test de flujo completo (Playwright)
 
 ## Roles
 
-- **Administrador de plataforma**: desde el email configurado en `control-mesas/src/lib/admin.ts` (`ADMIN_EMAIL`)
+- **Administrador de plataforma**: desde el email configurado en la variable `NEXT_PUBLIC_ADMIN_EMAIL`
   el login redirige a `/admin`, donde puede crear restaurantes, sucursales y mesas.
 - **Usuario de restaurante**: cuenta registrada que posee uno o varios restaurantes; el login
   lo lleva a `/dashboard/{restauranteId}` (o al selector si tiene varias marcas).
@@ -105,6 +106,7 @@ npm install
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave pública (anon) | `eyJhbGci...` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (solo backend, no exponer) | `eyJhbGci...` |
 | `NEXT_PUBLIC_SITE_URL` | URL pública del sitio (para links de recuperación) | `https://app.smarttable.com` |
+| `NEXT_PUBLIC_ADMIN_EMAIL` | Email del administrador de la plataforma (login → `/admin`) | `admin@misserver.com` |
 
 Solo para tests e2e:
 
