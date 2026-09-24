@@ -6,6 +6,8 @@ import {
   esSesionRecovery,
   urlConRecuperacion,
   resolverSucursalActiva,
+  urlSegura,
+  colorSegura,
 } from './utils';
 
 describe('minutosTranscurridos', () => {
@@ -115,6 +117,52 @@ describe('esSesionRecovery', () => {
   it('devuelve false para sesión nula o token inválido', () => {
     expect(esSesionRecovery(null)).toBe(false);
     expect(esSesionRecovery({ access_token: 'no-es-un-jwt' })).toBe(false);
+  });
+});
+
+describe('urlSegura', () => {
+  it('acepta enlaces http y https', () => {
+    expect(urlSegura('https://g.page/r/abc/review')).toBe('https://g.page/r/abc/review');
+    expect(urlSegura('http://localhost:3000/carta')).toBe('http://localhost:3000/carta');
+  });
+
+  it('acepta rutas relativas del propio sitio', () => {
+    expect(urlSegura('/carta.pdf')).toBe('/carta.pdf');
+  });
+
+  it('rechaza esquemas peligrosos (javascript:, data:)', () => {
+    expect(urlSegura('javascript:alert(1)')).toBe(null);
+    expect(urlSegura('data:text/html,<script>alert(1)</script>')).toBe(null);
+  });
+
+  it('rechaza URLs protocol-relative (//host)', () => {
+    expect(urlSegura('//evil.com')).toBe(null);
+  });
+
+  it('rechaza texto vacío, nulo o no parseable', () => {
+    expect(urlSegura('')).toBe(null);
+    expect(urlSegura('   ')).toBe(null);
+    expect(urlSegura(null)).toBe(null);
+    expect(urlSegura(undefined)).toBe(null);
+    expect(urlSegura('no es una url')).toBe(null);
+  });
+});
+
+describe('colorSegura', () => {
+  const POR_DEFECTO = '#0f766e';
+
+  it('acepta hex #rgb y #rrggbb', () => {
+    expect(colorSegura('#abc', POR_DEFECTO)).toBe('#abc');
+    expect(colorSegura('#A1B2C3', POR_DEFECTO)).toBe('#A1B2C3');
+    expect(colorSegura('  #123456  ', POR_DEFECTO)).toBe('#123456');
+  });
+
+  it('cae al valor por defecto para formatos inválidos o vacíos', () => {
+    expect(colorSegura('rojo', POR_DEFECTO)).toBe(POR_DEFECTO);
+    expect(colorSegura('#12', POR_DEFECTO)).toBe(POR_DEFECTO);
+    expect(colorSegura('', POR_DEFECTO)).toBe(POR_DEFECTO);
+    expect(colorSegura(null, POR_DEFECTO)).toBe(POR_DEFECTO);
+    expect(colorSegura(undefined, POR_DEFECTO)).toBe(POR_DEFECTO);
   });
 });
 

@@ -1,13 +1,13 @@
 import { NextRequest } from 'next/server';
-import { obtenerAdmin } from '../../../../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../../../../src/lib/supabase-admin';
+import { autorizarAdmin, errorInterno } from '../../../../../../../src/lib/api';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   ctx: RouteContext<'/api/admin/restaurantes/[id]/sucursales/[sucursalId]'>
 ) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
+  const auth = await autorizarAdmin(request);
+  if (!auth.ok) return auth.respuesta;
 
   const { id, sucursalId } = await ctx.params;
 
@@ -42,7 +42,8 @@ export async function DELETE(
   }
   await supabaseAdmin.from('peticiones').delete().eq('sucursal_id', sucursalId);
   await supabaseAdmin.from('mesas').delete().eq('sucursal_id', sucursalId);
-  await supabaseAdmin.from('sucursales').delete().eq('id', sucursalId);
+  const { error } = await supabaseAdmin.from('sucursales').delete().eq('id', sucursalId);
+  if (error) return errorInterno('DELETE sucursal', error);
 
   return Response.json({ ok: true });
 }

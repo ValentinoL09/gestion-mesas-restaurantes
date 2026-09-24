@@ -13,6 +13,36 @@ export function etiquetaCuenta(metodoPago: string | null): string {
     : '💵 Paga con Efectivo / Transferencia';
 }
 
+/**
+ * Devuelve la URL solo si es un enlace http(s) seguro; en cualquier otro caso
+ * (vacío, relativo o esquemas peligrosos como `javascript:` o `data:`) null.
+ * Se usa antes de renderizar links/imágenes configurables por el usuario.
+ */
+export function urlSegura(valor: string | null | undefined): string | null {
+  if (!valor) return null;
+  const texto = valor.trim();
+  if (!texto) return null;
+  // Ruta relativa al propio sitio (p. ej. /carta.pdf): segura, sin esquema.
+  // Se rechaza "//host" (protocol-relative) para no abrir enlaces externos.
+  if (texto.startsWith('/') && !texto.startsWith('//')) return texto;
+  try {
+    const url = new URL(texto);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? texto : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Devuelve el color solo si es un hex válido (#rgb o #rrggbb); si no, el valor
+ * por defecto. Evita inyectar CSS arbitrario en las variables de tema.
+ */
+export function colorSegura(valor: string | null | undefined, porDefecto: string): string {
+  if (!valor) return porDefecto;
+  const c = valor.trim();
+  return /^#[0-9a-fA-F]{3}$/.test(c) || /^#[0-9a-fA-F]{6}$/.test(c) ? c : porDefecto;
+}
+
 export type SucursalConId = { id: string; nombre: string };
 
 /**

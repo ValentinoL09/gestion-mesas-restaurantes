@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '../../../src/lib/supabase-server';
+import { urlSegura, colorSegura } from '../../../src/lib/utils';
 import { TemaProvider, TEMA_DEFAULT, type TemaRestaurante } from './_tema';
 import { SucursalesProvider } from './_sucursales';
 
@@ -36,9 +37,9 @@ export default async function DashboardLayout({
 
   const tema: TemaRestaurante = {
     nombre: restaurante.nombre,
-    logoUrl: restaurante.logo_url,
-    colorPrimario: restaurante.color_primario ?? TEMA_DEFAULT.colorPrimario,
-    colorSecundario: restaurante.color_secundario ?? TEMA_DEFAULT.colorSecundario,
+    logoUrl: urlSegura(restaurante.logo_url),
+    colorPrimario: colorSegura(restaurante.color_primario, TEMA_DEFAULT.colorPrimario),
+    colorSecundario: colorSegura(restaurante.color_secundario, TEMA_DEFAULT.colorSecundario),
   };
 
   return (

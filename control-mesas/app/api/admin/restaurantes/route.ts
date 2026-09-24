@@ -1,55 +1,79 @@
 import { NextRequest } from 'next/server';
-import { obtenerAdmin } from '../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../src/lib/supabase-admin';
+import { autorizarAdmin, errorInterno } from '../../../../src/lib/api';
+import {
+  LIMITE_NOMBRE,
+  MAX_MESAS_POR_SUCURSAL,
+  MAX_SUCURSALES,
+  MIN_PASSWORD,
+  emailValido,
+  enteroEnRango,
+  textoEnRango,
+} from '../../../../src/lib/validacion';
 
 export async function POST(request: NextRequest) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
+  const auth = await autorizarAdmin(request);
+  if (!auth.ok) return auth.respuesta;
 
-  const body = await request.json();
-  const { email, password, nombre, sucursales = [], cantidadMesas = 0 } = body ?? {};
+  const body = (await request.json().catch(() => ({}))) ?? {};
+  const { email, password, nombre, sucursales = [], cantidadMesas = 0 } = body;
 
-  if (!email || !password || !nombre) {
+  if (!emailValido(email)) {
+    return Response.json({ error: 'El email del dueño no es válido.' }, { status: 400 });
+  }
+
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD || password.length > 72) {
     return Response.json(
-      { error: 'Faltan datos: email, password y nombre del restaurante.' },
+      { error: `La contraseña debe tener entre ${MIN_PASSWORD} y 72 caracteres.` },
       { status: 400 }
     );
   }
 
-  if (!Array.isArray(sucursales) || sucursales.length === 0) {
+  if (!textoEnRango(nombre, 1, LIMITE_NOMBRE)) {
+    return Response.json({ error: 'El nombre debe tener entre 1 y 120 caracteres.' }, { status: 400 });
+  }
+
+  if (!Array.isArray(sucursales) || sucursales.length === 0 || sucursales.length > MAX_SUCURSALES) {
     return Response.json(
-      { error: 'El restaurante necesita al menos una sucursal.' },
+      { error: `El restaurante debe tener entre 1 y ${MAX_SUCURSALES} sucursales.` },
+      { status: 400 }
+    );
+  }
+
+  const cantidad = enteroEnRango(cantidadMesas, 0, MAX_MESAS_POR_SUCURSAL);
+  if (cantidad === null) {
+    return Response.json(
+      { error: `Las mesas por sucursal deben ser un entero entre 0 y ${MAX_MESAS_POR_SUCURSAL}.` },
       { status: 400 }
     );
   }
 
   const nombresSucursales = sucursales.map((s) => {
-    const nombreSuc = typeof s === 'object' && s !== null ? String(s.nombre ?? '') : '';
-    return nombreSuc.trim();
+    const nombreSuc = typeof s === 'object' && s !== null ? String((s as { nombre?: unknown }).nombre ?? '') : '';
+    return nombreSuc.trim().slice(0, LIMITE_NOMBRE);
   });
 
   const { data: nuevoUsuario, error: errorUsuario } = await supabaseAdmin.auth.admin.createUser({
-    email,
+    email: String(email).trim(),
     password,
     email_confirm: true,
   });
 
   if (errorUsuario) {
-    return Response.json({ error: errorUsuario.message }, { status: 400 });
+    return Response.json({ error: 'No se pudo crear la cuenta del dueño.' }, { status: 400 });
   }
 
   const { data: restaurante, error: errorRestaurante } = await supabaseAdmin
     .from('restaurantes')
-    .insert({ nombre, usuario_id: nuevoUsuario.user.id })
+    .insert({ nombre: String(nombre).trim(), usuario_id: nuevoUsuario.user.id })
     .select()
     .single();
 
   if (errorRestaurante) {
     await supabaseAdmin.auth.admin.deleteUser(nuevoUsuario.user.id);
-    return Response.json({ error: errorRestaurante.message }, { status: 500 });
+    return errorInterno('POST restaurante', errorRestaurante);
   }
 
-  // Crear las sucursales de la marca (con/título por defecto si el nombre es vacío).
   const filasSucursales = nombresSucursales.map((nombreSuc, i) => ({
     restaurante_id: restaurante.id,
     nombre: nombreSuc || `Sucursal ${i + 1}`,
@@ -63,11 +87,10 @@ export async function POST(request: NextRequest) {
   if (errorSucursales) {
     await supabaseAdmin.from('restaurantes').delete().eq('id', restaurante.id);
     await supabaseAdmin.auth.admin.deleteUser(nuevoUsuario.user.id);
-    return Response.json({ error: errorSucursales.message }, { status: 500 });
+    return errorInterno('POST restaurante (sucursales)', errorSucursales);
   }
 
-  const cantidad = Number(cantidadMesas);
-  if (Number.isInteger(cantidad) && cantidad > 0) {
+  if (cantidad > 0) {
     const filas = sucursalesCreadas.flatMap((suc) =>
       Array.from({ length: cantidad }, (_, j) => ({
         restaurante_id: restaurante.id,

@@ -1,21 +1,65 @@
 import { NextRequest } from 'next/server';
-import { obtenerAdmin } from '../../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../../src/lib/supabase-admin';
+import { autorizarAdmin, errorInterno } from '../../../../../src/lib/api';
+import {
+  LIMITE_NOMBRE,
+  colorHexValido,
+  textoEnRango,
+  urlValida,
+} from '../../../../../src/lib/validacion';
 import type { TablesUpdate } from '../../../../../src/lib/database.types';
 
 export async function PUT(request: NextRequest, ctx: RouteContext<'/api/admin/restaurantes/[id]'>) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
+  const auth = await autorizarAdmin(request);
+  if (!auth.ok) return auth.respuesta;
 
   const { id } = await ctx.params;
-  const body = (await request.json()) ?? {};
+  const body = (await request.json().catch(() => ({}))) ?? {};
 
   const cambios: TablesUpdate<'restaurantes'> = {};
-  if ('nombre' in body) cambios.nombre = body.nombre ?? null;
-  if ('url_carta' in body) cambios.url_carta = body.url_carta ?? null;
-  if ('logo_url' in body) cambios.logo_url = body.logo_url ?? null;
-  if ('color_primario' in body) cambios.color_primario = body.color_primario ?? null;
-  if ('color_secundario' in body) cambios.color_secundario = body.color_secundario ?? null;
+
+  if ('nombre' in body) {
+    if (!textoEnRango(body.nombre, 1, LIMITE_NOMBRE)) {
+      return Response.json({ error: 'El nombre debe tener entre 1 y 120 caracteres.' }, { status: 400 });
+    }
+    cambios.nombre = String(body.nombre).trim();
+  }
+
+  if ('url_carta' in body) {
+    const carta = body.url_carta;
+    if (carta !== null && carta !== '' && urlValida(carta) === null) {
+      return Response.json({ error: 'La URL de la carta debe ser un enlace http(s) válido.' }, { status: 400 });
+    }
+    cambios.url_carta = urlValida(carta);
+  }
+
+  if ('url_resenas' in body) {
+    const resenas = body.url_resenas;
+    if (resenas !== null && resenas !== '' && urlValida(resenas) === null) {
+      return Response.json({ error: 'La URL de reseñas debe ser un enlace http(s) válido.' }, { status: 400 });
+    }
+    cambios.url_resenas = urlValida(resenas);
+  }
+
+  if ('logo_url' in body) {
+    const logo = body.logo_url;
+    if (logo !== null && logo !== '' && urlValida(logo) === null) {
+      return Response.json({ error: 'La URL del logo no es válida.' }, { status: 400 });
+    }
+    cambios.logo_url = urlValida(logo);
+  }
+
+  if ('color_primario' in body) {
+    const color = colorHexValido(body.color_primario);
+    if (!color) return Response.json({ error: 'El color principal debe ser hexadecimal (#rrggbb).' }, { status: 400 });
+    cambios.color_primario = color;
+  }
+
+  if ('color_secundario' in body) {
+    const color = colorHexValido(body.color_secundario);
+    if (!color) return Response.json({ error: 'El color secundario debe ser hexadecimal (#rrggbb).' }, { status: 400 });
+    cambios.color_secundario = color;
+  }
 
   if (Object.keys(cambios).length === 0) {
     return Response.json({ error: 'Sin cambios para guardar.' }, { status: 400 });
@@ -28,17 +72,17 @@ export async function PUT(request: NextRequest, ctx: RouteContext<'/api/admin/re
     .select()
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return errorInterno('PUT restaurante', error);
 
   return Response.json({ restaurante });
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   ctx: RouteContext<'/api/admin/restaurantes/[id]'>
 ) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
+  const auth = await autorizarAdmin(request);
+  if (!auth.ok) return auth.respuesta;
 
   const { id } = await ctx.params;
 
@@ -62,7 +106,7 @@ export async function DELETE(
   await supabaseAdmin.from('sucursales').delete().eq('restaurante_id', id);
 
   const { error } = await supabaseAdmin.from('restaurantes').delete().eq('id', id);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return errorInterno('DELETE restaurante', error);
 
   if (restaurante.usuario_id) {
     await supabaseAdmin.auth.admin.deleteUser(restaurante.usuario_id);

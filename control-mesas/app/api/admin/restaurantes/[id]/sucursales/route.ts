@@ -1,24 +1,49 @@
 import { NextRequest } from 'next/server';
-import { obtenerAdmin } from '../../../../../../src/lib/requerirAdmin';
 import { supabaseAdmin } from '../../../../../../src/lib/supabase-admin';
+import { autorizarAdmin, errorInterno } from '../../../../../../src/lib/api';
+import {
+  LIMITE_NOMBRE,
+  MAX_MESAS_POR_SUCURSAL,
+  MAX_SUCURSALES,
+  enteroEnRango,
+  textoEnRango,
+} from '../../../../../../src/lib/validacion';
 
 export async function POST(
   request: NextRequest,
   ctx: RouteContext<'/api/admin/restaurantes/[id]/sucursales'>
 ) {
-  const admin = await obtenerAdmin();
-  if (!admin) return Response.json({ error: 'No autorizado' }, { status: 401 });
+  const auth = await autorizarAdmin(request);
+  if (!auth.ok) return auth.respuesta;
 
   const { id } = await ctx.params;
   const body = (await request.json().catch(() => ({}))) ?? {};
   const { nombre, cantidadMesas } = body;
+
+  if (nombre != null && nombre !== '' && !textoEnRango(nombre, 1, LIMITE_NOMBRE)) {
+    return Response.json({ error: 'El nombre de la sucursal no puede superar los 120 caracteres.' }, { status: 400 });
+  }
+
+  const cantidad = enteroEnRango(cantidadMesas ?? 0, 0, MAX_MESAS_POR_SUCURSAL);
+  if (cantidad === null) {
+    return Response.json(
+      { error: `Las mesas deben ser un entero entre 0 y ${MAX_MESAS_POR_SUCURSAL}.` },
+      { status: 400 }
+    );
+  }
 
   const { data: existentes } = await supabaseAdmin
     .from('sucursales')
     .select('id')
     .eq('restaurante_id', id);
 
-  // Nombre vacío ⇒ el número de sucursal que sigue.
+  if ((existentes?.length ?? 0) >= MAX_SUCURSALES) {
+    return Response.json(
+      { error: `No se pueden superar las ${MAX_SUCURSALES} sucursales.` },
+      { status: 400 }
+    );
+  }
+
   const nombreFinal = String(nombre ?? '').trim() || `Sucursal ${(existentes?.length ?? 0) + 1}`;
 
   const { data: sucursal, error } = await supabaseAdmin
@@ -27,10 +52,9 @@ export async function POST(
     .select()
     .single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) return errorInterno('POST sucursal', error);
 
-  const cantidad = Number(cantidadMesas);
-  if (Number.isInteger(cantidad) && cantidad > 0) {
+  if (cantidad > 0) {
     const filas = Array.from({ length: cantidad }, (_, i) => ({
       restaurante_id: id,
       sucursal_id: sucursal.id,
