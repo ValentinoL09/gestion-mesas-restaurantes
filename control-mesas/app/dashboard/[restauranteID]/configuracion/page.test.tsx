@@ -22,9 +22,15 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('../../../../src/lib/supabase', () => ({ supabase }));
 
-const INICIAL_DEFAULT: { nombre: string; url_carta: string; logo_url: string | null } = {
+const INICIAL_DEFAULT: {
+  nombre: string;
+  url_carta: string;
+  url_resenas: string;
+  logo_url: string | null;
+} = {
   nombre: '',
   url_carta: '',
+  url_resenas: '',
   logo_url: null,
 };
 
@@ -71,6 +77,7 @@ describe('FormConfiguracion', () => {
     await renderConfiguracion({
       nombre: 'Pizzeria Don Gato',
       url_carta: '/carta.pdf',
+      url_resenas: 'https://g.page/r/abc/review',
       logo_url: '/logo-don-gato.png',
     });
 
@@ -87,7 +94,7 @@ describe('FormConfiguracion', () => {
 
   it('guarda nombre y url_carta sin tocar el logo', async () => {
     const updates = configurarSupabase();
-    await renderConfiguracion({ nombre: 'Local', url_carta: '', logo_url: '/logo.png' });
+    await renderConfiguracion({ nombre: 'Local', url_carta: '', url_resenas: '', logo_url: '/logo.png' });
 
     await userEvent.clear(screen.getByLabelText('Nombre del local'));
     await userEvent.type(screen.getByLabelText('Nombre del local'), 'Local Viejo');
@@ -104,6 +111,36 @@ describe('FormConfiguracion', () => {
     });
     expect(updates[0].payload).not.toHaveProperty('logo_url');
     expect(supabase.storage.from).not.toHaveBeenCalled();
+  });
+
+  it('guarda la URL de reseñas de Google', async () => {
+    const updates = configurarSupabase();
+    await renderConfiguracion();
+
+    await userEvent.type(
+      screen.getByLabelText('URL de reseñas de Google'),
+      'https://g.page/r/abc/review'
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByText(/Configuración guardada/)).toBeInTheDocument();
+    expect(updates[0].payload).toMatchObject({
+      url_resenas: 'https://g.page/r/abc/review',
+    });
+  });
+
+  it('rechaza una URL de reseñas con esquema no permitido', async () => {
+    const updates = configurarSupabase();
+    await renderConfiguracion();
+
+    await userEvent.type(
+      screen.getByLabelText('URL de reseñas de Google'),
+      'javascript:alert(1)'
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByText(/debe empezar con http/)).toBeInTheDocument();
+    expect(updates).toHaveLength(0);
   });
 
   it('sube el logo nuevo y guarda su URL pública al guardar', async () => {
@@ -131,7 +168,7 @@ describe('FormConfiguracion', () => {
 
   it('quita el logo al guardar', async () => {
     const updates = configurarSupabase();
-    await renderConfiguracion({ nombre: '', url_carta: '', logo_url: 'https://cdn.test/logos/r-1/logo' });
+    await renderConfiguracion({ nombre: '', url_carta: '', url_resenas: '', logo_url: 'https://cdn.test/logos/r-1/logo' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Quitar logo' }));
     expect(screen.getByText(/Se quitará el logo/)).toBeInTheDocument();

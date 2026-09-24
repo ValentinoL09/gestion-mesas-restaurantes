@@ -12,7 +12,7 @@ export default async function ConfiguracionRestaurante({
 
   const { data: restaurante } = await supabase
     .from('restaurantes')
-    .select('nombre, url_carta, logo_url')
+    .select('nombre, url_carta, url_resenas, logo_url')
     .eq('id', restauranteID)
     .single();
 
@@ -24,6 +24,7 @@ export default async function ConfiguracionRestaurante({
       initial={{
         nombre: restaurante.nombre ?? '',
         url_carta: restaurante.url_carta ?? '',
+        url_resenas: restaurante.url_resenas ?? '',
         logo_url: restaurante.logo_url ?? null,
       }}
     />

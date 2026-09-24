@@ -135,6 +135,7 @@ export type Database = {
           logo_url: string | null
           nombre: string
           url_carta: string | null
+          url_resenas: string | null
           usuario_id: string | null
         }
         Insert: {
@@ -146,6 +147,7 @@ export type Database = {
           logo_url?: string | null
           nombre: string
           url_carta?: string | null
+          url_resenas?: string | null
           usuario_id?: string | null
         }
         Update: {
@@ -157,6 +159,7 @@ export type Database = {
           logo_url?: string | null
           nombre?: string
           url_carta?: string | null
+          url_resenas?: string | null
           usuario_id?: string | null
         }
         Relationships: []
@@ -229,6 +232,7 @@ export type Database = {
           logo_url: string | null
           nombre: string | null
           url_carta: string | null
+          url_resenas: string | null
         }
         Insert: {
           color_primario?: string | null
@@ -237,6 +241,7 @@ export type Database = {
           logo_url?: string | null
           nombre?: string | null
           url_carta?: string | null
+          url_resenas?: string | null
         }
         Update: {
           color_primario?: string | null
@@ -245,6 +250,7 @@ export type Database = {
           logo_url?: string | null
           nombre?: string | null
           url_carta?: string | null
+          url_resenas?: string | null
         }
         Relationships: []
       }

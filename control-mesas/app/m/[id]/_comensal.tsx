@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { supabase } from '../../../src/lib/supabase';
+import { urlSegura, colorSegura } from '../../../src/lib/utils';
 import type { Tables, TablesInsert } from '../../../src/lib/database.types';
 
 type TemaComensal = {
@@ -29,6 +30,7 @@ export default function PantallaComensal({
   mesa: Tables<'mesas'>;
   restaurante: {
     url_carta: string | null;
+    url_resenas: string | null;
     logo_url: string | null;
     color_primario: string | null;
     color_secundario: string | null;
@@ -40,16 +42,18 @@ export default function PantallaComensal({
   const [mensaje, setMensaje] = useState('');
   const [bloqueado, setBloqueado] = useState(false);
   const [metodoSeleccionando, setMetodoSeleccionando] = useState(false);
+  const [mostrarModalResena, setMostrarModalResena] = useState(false);
   const [tiposPendientesActuales, setTiposPendientesActuales] = useState<Set<string>>(
     new Set(tiposPendientes)
   );
 
-  const urlCarta = restaurante?.url_carta ?? null;
+  const urlCarta = urlSegura(restaurante?.url_carta);
+  const urlResenas = urlSegura(restaurante?.url_resenas);
   const tema: TemaComensal = {
     nombre: restaurante?.nombre || TEMA_COMENSAL_DEFAULT.nombre,
-    logoUrl: restaurante?.logo_url ?? null,
-    colorPrimario: restaurante?.color_primario || TEMA_COMENSAL_DEFAULT.colorPrimario,
-    colorSecundario: restaurante?.color_secundario || TEMA_COMENSAL_DEFAULT.colorSecundario,
+    logoUrl: urlSegura(restaurante?.logo_url),
+    colorPrimario: colorSegura(restaurante?.color_primario, TEMA_COMENSAL_DEFAULT.colorPrimario),
+    colorSecundario: colorSegura(restaurante?.color_secundario, TEMA_COMENSAL_DEFAULT.colorSecundario),
   };
 
   function marcarTipo(tipo: string, pendiente: boolean) {
@@ -149,6 +153,15 @@ export default function PantallaComensal({
     };
   }, [id, mesa.estado]);
 
+  useEffect(() => {
+    if (!mostrarModalResena) return;
+    const alPresionar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMostrarModalResena(false);
+    };
+    window.addEventListener('keydown', alPresionar);
+    return () => window.removeEventListener('keydown', alPresionar);
+  }, [mostrarModalResena]);
+
   async function enviarPeticion(
     tipo: 'llamar_mozo' | 'pedir_cuenta',
     metodo?: 'efectivo' | 'tarjeta'
@@ -182,7 +195,10 @@ export default function PantallaComensal({
       setTimeout(() => setMensaje(''), 3000);
     } else {
       marcarTipo(tipo, true);
-      if (tipo === 'pedir_cuenta') setMetodoSeleccionando(false);
+      if (tipo === 'pedir_cuenta') {
+        setMetodoSeleccionando(false);
+        if (urlResenas) setMostrarModalResena(true);
+      }
       setMensaje(tipo === 'pedir_cuenta' ? '✅ ¡La cuenta está en camino!' : '✅ ¡Tu mozo está en camino!');
       setTimeout(() => setMensaje(''), 3000);
     }
@@ -306,12 +322,67 @@ export default function PantallaComensal({
               {pedidaCuenta ? '💳 Cuenta pedida' : '💳 Pedir la Cuenta'}
             </button>
           )}
+
+          {urlResenas && (
+            <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-5 text-center space-y-3">
+              <div className="text-3xl leading-none">⭐⭐⭐⭐⭐</div>
+              <p className="text-sm font-semibold text-gray-700">
+                ¿Te gustó la atención? Ayudanos con tu reseña en Google.
+              </p>
+              <a
+                href={urlResenas}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-3.5 rounded-xl font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-md active:scale-[0.98]"
+              >
+                ⭐ Dejanos tu reseña
+              </a>
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-gray-400 pt-6">
           Sesión segura vinculada.
         </p>
       </div>
+
+      {mostrarModalResena && urlResenas && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tituloResena"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
+          onClick={() => setMostrarModalResena(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-4xl">⭐</div>
+            <h2 id="tituloResena" className="text-xl font-bold text-gray-800">
+              ¿Nos dejás una reseña?
+            </h2>
+            <p className="text-sm text-gray-500">
+              Tu opinión nos ayuda a mejorar y a que más gente nos conozca. ¡Gracias por tu visita!
+            </p>
+            <a
+              href={urlResenas}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMostrarModalResena(false)}
+              className="block w-full py-3.5 rounded-xl font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-md"
+            >
+              Sí, dejar mi reseña
+            </a>
+            <button
+              onClick={() => setMostrarModalResena(false)}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Ahora no
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

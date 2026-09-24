@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { urlSegura } from '../../../src/lib/utils';
 import type { Tables } from '../../../src/lib/database.types';
 
 type SucursalConMesas = Tables<'sucursales'> & {
@@ -22,6 +23,7 @@ export default function EditarRestaurante({
 
   const [nombre, setNombre] = useState(restaurante.nombre ?? '');
   const [urlCarta, setUrlCarta] = useState(restaurante.url_carta ?? '');
+  const [urlResenas, setUrlResenas] = useState(restaurante.url_resenas ?? '');
   const [colorPrimario, setColorPrimario] = useState(restaurante.color_primario ?? '#2563eb');
   const [colorSecundario, setColorSecundario] = useState(restaurante.color_secundario ?? '#0a0a0a');
   const [logoUrl, setLogoUrl] = useState<string | null>(restaurante.logo_url ?? null);
@@ -86,6 +88,7 @@ export default function EditarRestaurante({
       body: JSON.stringify({
         nombre: nombre.trim() || 'Mi Restaurante',
         url_carta: urlCarta.trim() || null,
+        url_resenas: urlResenas.trim() || null,
         color_primario: colorPrimario,
         color_secundario: colorSecundario,
         ...(logoNuevo ? { logo_url: nuevaLogoUrl } : {}),
@@ -176,7 +179,7 @@ export default function EditarRestaurante({
     }
   }
 
-  const logoVisto = preview ?? logoUrl ?? '/logo.png';
+  const logoVisto = preview ?? urlSegura(logoUrl) ?? '/logo.png';
 
   return (
     <main className="max-w-2xl mx-auto p-8 space-y-6">
@@ -252,6 +255,23 @@ export default function EditarRestaurante({
             placeholder="https://tucarta.ejemplo.com/menu"
             className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
           />
+        </div>
+
+        <div>
+          <label htmlFor="resenasGoogle" className="block text-sm font-medium text-gray-700 mb-1">
+            URL de reseñas de Google
+          </label>
+          <input
+            id="resenasGoogle"
+            type="url"
+            value={urlResenas}
+            onChange={(e) => setUrlResenas(e.target.value)}
+            placeholder="https://g.page/r/.../review"
+            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Si se define, el comensal ve el botón &quot;Dejanos tu reseña&quot; y se le ofrece al pedir la cuenta.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '../../../../src/lib/supabase';
+import { urlSegura } from '../../../../src/lib/utils';
 import type { TablesUpdate } from '../../../../src/lib/database.types';
 import NavDashboard from '../_nav';
 
@@ -12,10 +13,11 @@ export default function FormConfiguracion({
   initial,
 }: {
   restauranteID: string;
-  initial: { nombre: string; url_carta: string; logo_url: string | null };
+  initial: { nombre: string; url_carta: string; url_resenas: string; logo_url: string | null };
 }) {
   const [nombre, setNombre] = useState(initial.nombre);
   const [urlCarta, setUrlCarta] = useState(initial.url_carta);
+  const [urlResenas, setUrlResenas] = useState(initial.url_resenas);
   const [logoUrl, setLogoUrl] = useState<string | null>(initial.logo_url);
   const [logoNuevo, setLogoNuevo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -50,9 +52,24 @@ export default function FormConfiguracion({
     setError('');
     setTitulo('');
 
+    const carta = urlCarta.trim();
+    const resenas = urlResenas.trim();
+
+    if (carta && !urlSegura(carta)) {
+      setError('La URL de la carta debe empezar con http:// o https://.');
+      setGuardando(false);
+      return;
+    }
+    if (resenas && !urlSegura(resenas)) {
+      setError('La URL de reseñas debe empezar con http:// o https://.');
+      setGuardando(false);
+      return;
+    }
+
     const cambios: TablesUpdate<'restaurantes'> = {
       nombre: nombre.trim() || 'Mi Restaurante',
-      url_carta: urlCarta.trim() || null,
+      url_carta: carta || null,
+      url_resenas: resenas || null,
     };
 
     let nuevaLogoUrl: string | null | undefined;
@@ -92,8 +109,8 @@ export default function FormConfiguracion({
     setGuardando(false);
   }
 
-  const logoVisto = preview ?? logoUrl ?? LOGO_SUGERIDO;
-  const logoDeMarca = preview ?? logoUrl;
+  const logoVisto = preview ?? urlSegura(logoUrl) ?? LOGO_SUGERIDO;
+  const logoDeMarca = preview ?? urlSegura(logoUrl);
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -181,6 +198,21 @@ export default function FormConfiguracion({
             />
             <p className="text-xs text-gray-400 mt-1">
               Si se define, el comensal ve el botón &quot;Ver Carta Digital&quot; en su pantalla. Vacío = QR solo para mozos.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="resenasGoogle" className="block text-sm font-medium text-gray-700 mb-1">URL de reseñas de Google</label>
+            <input
+              id="resenasGoogle"
+              type="url"
+              value={urlResenas}
+              onChange={(e) => setUrlResenas(e.target.value)}
+              placeholder="https://g.page/r/.../review"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition-all"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Si se define, el comensal ve el botón &quot;Dejanos tu reseña&quot; y se le ofrece dejar una reseña al pedir la cuenta.
             </p>
           </div>
 

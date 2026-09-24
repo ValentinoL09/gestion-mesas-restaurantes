@@ -25,7 +25,7 @@ export default async function MesaComensal({ params }: { params: Promise<{ id: s
   const [{ data: restaurante }, { data: peticiones }] = await Promise.all([
     supabase
       .from('restaurantes_publico')
-      .select('url_carta, logo_url, color_primario, color_secundario, nombre')
+      .select('url_carta, url_resenas, logo_url, color_primario, color_secundario, nombre')
       .eq('id', mesa.restaurante_id)
       .single(),
     supabase

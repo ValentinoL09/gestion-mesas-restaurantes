@@ -27,12 +27,14 @@ const MESA = {
 
 const RESTAURANTE_DEFAULT: {
   url_carta: string | null;
+  url_resenas: string | null;
   logo_url: string | null;
   color_primario: string;
   color_secundario: string;
   nombre: string;
 } = {
   url_carta: null,
+  url_resenas: null,
   logo_url: null,
   color_primario: '#7c3aed',
   color_secundario: '#0f172a',
@@ -227,5 +229,74 @@ describe('PantallaComensal', () => {
       metodo_pago: 'efectivo',
       estado: 'pendiente',
     });
+  });
+
+  it('no muestra el botón de reseña si el restaurante no tiene url_resenas', async () => {
+    configurarSupabase();
+    await renderComensal();
+
+    expect(screen.queryByRole('link', { name: /Dejanos tu reseña/ })).not.toBeInTheDocument();
+  });
+
+  it('muestra el botón de reseña cuando el restaurante tiene url_resenas', async () => {
+    configurarSupabase();
+    await renderComensal({
+      restaurante: { ...RESTAURANTE_DEFAULT, url_resenas: 'https://g.page/r/abc/review' },
+    });
+
+    expect(screen.getByRole('link', { name: /Dejanos tu reseña/ })).toHaveAttribute(
+      'href',
+      'https://g.page/r/abc/review'
+    );
+  });
+
+  it('ignora una url_resenas con esquema peligroso', async () => {
+    configurarSupabase();
+    await renderComensal({
+      restaurante: { ...RESTAURANTE_DEFAULT, url_resenas: 'javascript:alert(1)' },
+    });
+
+    expect(screen.queryByRole('link', { name: /Dejanos tu reseña/ })).not.toBeInTheDocument();
+  });
+
+  it('ofrece dejar una reseña al pedir la cuenta', async () => {
+    configurarSupabase();
+    await renderComensal({
+      restaurante: { ...RESTAURANTE_DEFAULT, url_resenas: 'https://g.page/r/abc/review' },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /Pedir la Cuenta/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Tarjeta/ }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Sí, dejar mi reseña/ })).toHaveAttribute(
+      'href',
+      'https://g.page/r/abc/review'
+    );
+  });
+
+  it('no ofrece reseña al pedir la cuenta si no hay url_resenas', async () => {
+    configurarSupabase();
+    await renderComensal();
+
+    await userEvent.click(screen.getByRole('button', { name: /Pedir la Cuenta/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Tarjeta/ }));
+
+    expect(await screen.findByText(/cuenta está en camino/)).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('cierra el modal de reseña con "Ahora no"', async () => {
+    configurarSupabase();
+    await renderComensal({
+      restaurante: { ...RESTAURANTE_DEFAULT, url_resenas: 'https://g.page/r/abc/review' },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /Pedir la Cuenta/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Tarjeta/ }));
+    await screen.findByRole('dialog');
+
+    await userEvent.click(screen.getByRole('button', { name: /Ahora no/ }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
