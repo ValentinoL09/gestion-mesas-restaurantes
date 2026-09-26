@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../../../src/lib/supabase';
 import { urlSegura } from '../../../../src/lib/utils';
+import { normalizarLogo } from '../../../../src/lib/normalizar-logo';
 import type { TablesUpdate } from '../../../../src/lib/database.types';
 import NavDashboard from '../_nav';
 
@@ -15,6 +17,7 @@ export default function FormConfiguracion({
   restauranteID: string;
   initial: { nombre: string; url_carta: string; url_resenas: string; logo_url: string | null };
 }) {
+  const router = useRouter();
   const [nombre, setNombre] = useState(initial.nombre);
   const [urlCarta, setUrlCarta] = useState(initial.url_carta);
   const [urlResenas, setUrlResenas] = useState(initial.url_resenas);
@@ -22,11 +25,19 @@ export default function FormConfiguracion({
   const [logoNuevo, setLogoNuevo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [quitarLogo, setQuitarLogo] = useState(false);
+  const [normalizando, setNormalizando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [titulo, setTitulo] = useState('');
   const [error, setError] = useState('');
 
-  function elegirLogo(archivo: File | null) {
+  // El preview es un blob URL: sin esto cada logo elegido deja una fuga.
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  async function elegirLogo(archivo: File | null) {
     setError('');
     setQuitarLogo(false);
     setLogoNuevo(null);
@@ -43,8 +54,17 @@ export default function FormConfiguracion({
       return;
     }
 
-    setLogoNuevo(archivo);
-    setPreview(URL.createObjectURL(archivo));
+    setNormalizando(true);
+    try {
+      // Recorta el margen vacío y deja el lado mayor en 512px, para que todos
+      // los logos ocupen lo mismo en la pantalla sea cual sea su proporción.
+      // Si el browser no puede procesarla, se sube el archivo original.
+      const listo = await normalizarLogo(archivo);
+      setLogoNuevo(listo);
+      setPreview(URL.createObjectURL(listo));
+    } finally {
+      setNormalizando(false);
+    }
   }
 
   async function guardar() {
@@ -105,6 +125,9 @@ export default function FormConfiguracion({
       setQuitarLogo(false);
       setTitulo('✅ Configuración guardada.');
       setTimeout(() => setTitulo(''), 3000);
+      // El tema (logo y nombre) lo arma el layout de servidor: sin refrescar,
+      // el nav seguiría mostrando el logo anterior hasta recargar la página.
+      router.refresh();
     }
     setGuardando(false);
   }
@@ -126,20 +149,19 @@ export default function FormConfiguracion({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Logo del local</label>
             <div className="flex items-center gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={logoVisto}
-                alt="Logo del restaurante"
-                className="h-22 sm:h-28 w-auto max-w-[12rem] rounded-xl border border-gray-200 object-contain bg-white"
-              />
+              <span className="flex h-24 sm:h-28 w-48 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={logoVisto} alt="Logo del restaurante" className="max-h-full max-w-full object-contain" />
+              </span>
               <label className="px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
-                Subir logo
+                {normalizando ? 'Procesando...' : 'Subir logo'}
                 <input
                   type="file"
                   accept="image/*"
+                  disabled={normalizando}
                   className="hidden"
                   aria-label="Subir logo"
-                  onChange={(e) => elegirLogo(e.target.files?.[0] ?? null)}
+                  onChange={(e) => void elegirLogo(e.target.files?.[0] ?? null)}
                 />
               </label>
               {logoDeMarca && !quitarLogo && !logoNuevo && (

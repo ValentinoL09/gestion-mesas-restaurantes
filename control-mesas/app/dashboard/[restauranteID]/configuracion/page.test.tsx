@@ -4,14 +4,17 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FormConfiguracion from './_form';
 
-const { supabase } = vi.hoisted(() => {
+const { supabase, normalizarLogoMock } = vi.hoisted(() => {
   const supabase = {
     from: vi.fn(),
     storage: {
       from: vi.fn(),
     },
   };
-  return { supabase };
+  // El normalizador real necesita canvas; acá se lo aísla porque tiene sus
+  // propios tests en src/lib/normalizar-logo.test.ts.
+  const normalizarLogoMock = vi.fn(async (archivo: File) => archivo);
+  return { supabase, normalizarLogoMock };
 });
 
 vi.mock('next/navigation', () => ({
@@ -21,6 +24,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('../../../../src/lib/supabase', () => ({ supabase }));
+vi.mock('../../../../src/lib/normalizar-logo', () => ({ normalizarLogo: normalizarLogoMock }));
 
 const INICIAL_DEFAULT: {
   nombre: string;
@@ -69,7 +73,9 @@ async function renderConfiguracion(inicial: typeof INICIAL_DEFAULT = INICIAL_DEF
 beforeEach(() => {
   vi.clearAllMocks();
   cleanup();
+  normalizarLogoMock.mockImplementation(async (archivo: File) => archivo);
   URL.createObjectURL = vi.fn(() => 'blob:preview-url');
+  URL.revokeObjectURL = vi.fn();
 });
 
 describe('FormConfiguracion', () => {
@@ -148,8 +154,10 @@ describe('FormConfiguracion', () => {
     await renderConfiguracion();
 
     const archivo = new File(['logo'], 'logo.png', { type: 'image/png' });
-    fireEvent.change(screen.getByLabelText('Subir logo'), {
-      target: { files: [archivo] },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Subir logo'), {
+        target: { files: [archivo] },
+      });
     });
 
     await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -164,6 +172,30 @@ describe('FormConfiguracion', () => {
     expect(updates[0].payload).toMatchObject({
       logo_url: 'https://cdn.test/logos/r-1/logo',
     });
+  });
+
+  it('sube el logo ya normalizado, no el archivo original', async () => {
+    configurarSupabase();
+    await renderConfiguracion();
+
+    const original = new File(['logo'], 'logo.png', { type: 'image/png' });
+    const normalizado = new File(['recortado'], 'logo.png', { type: 'image/png' });
+    normalizarLogoMock.mockResolvedValue(normalizado);
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Subir logo'), {
+        target: { files: [original] },
+      });
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByText(/Configuración guardada/)).toBeInTheDocument();
+    expect(normalizarLogoMock).toHaveBeenCalledWith(original);
+    expect((supabase.storage.from as ReturnType<typeof vi.fn>).mock.results[0].value.upload).toHaveBeenCalledWith(
+      'r-1/logo',
+      normalizado,
+      { upsert: true, cacheControl: '3600' }
+    );
   });
 
   it('quita el logo al guardar', async () => {

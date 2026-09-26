@@ -45,27 +45,26 @@ export default function NavDashboard({
     }`;
 
   // La marca del restaurante nunca sale del restaurante: desde cualquier
-  // sección vuelve a las mesas. `w-auto` + `max-w` evitan que un logo
-  // panorámico desborde el nav, y el nombre se recorta en vez de empujar
-  // los links de sección.
+  // sección vuelve a las mesas. El logo vive en una caja FIJA, así todos los
+  // restaurantes ocupan lo mismo sin importar la proporción de su imagen (que
+  // además llega normalizada a 512px por lado mayor). El nombre se recorta en
+  // vez de empujar los links de sección.
   const marca = (
     <>
       {tema.logoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={tema.logoUrl}
-          alt={tema.nombre}
-          className="h-10 sm:h-12 w-auto max-w-[10rem] rounded-lg object-contain shrink-0"
-        />
+        <span className="flex h-14 sm:h-16 w-28 sm:w-40 shrink-0 items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={tema.logoUrl} alt="" className="max-h-full max-w-full rounded-lg object-contain" />
+        </span>
       )}
-      <span className="min-w-0 max-w-[9rem] sm:max-w-[14rem] truncate text-xl font-black tracking-tighter text-gray-900">
+      <span className="min-w-0 max-w-[12rem] sm:max-w-[16rem] truncate text-xl sm:text-2xl font-black tracking-tighter text-gray-900">
         {tema.nombre}
       </span>
     </>
   );
 
   return (
-    <nav className="w-full flex items-center gap-1 bg-white border-b border-gray-200 px-6 py-3 print:hidden shadow-sm">
+    <nav className="w-full flex items-center gap-1 bg-white border-b border-gray-200 px-6 py-3 print:hidden shadow-sm overflow-x-auto">
       {actual === 'tablero' ? (
         <div className="flex items-center gap-2.5 mr-6">{marca}</div>
       ) : (
