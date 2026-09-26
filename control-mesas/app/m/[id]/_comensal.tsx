@@ -238,7 +238,7 @@ export default function PantallaComensal({
           <div className="flex flex-col items-center gap-3">
             {tema.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={tema.logoUrl} alt={tema.nombre} className="h-22 sm:h-28 rounded-xl object-contain" />
+              <img src={tema.logoUrl} alt={tema.nombre} className="h-22 sm:h-28 w-auto max-w-[14rem] rounded-xl object-contain" />
             ) : (
               <h2 className="text-sm font-bold tracking-widest uppercase text-[var(--t-primario)]">{tema.nombre}</h2>
             )}

@@ -98,4 +98,48 @@ describe('NavDashboard', () => {
       '/dashboard/r-1/qrs?sucursal=s-2'
     );
   });
+
+  it('la marca lleva a las mesas del restaurante, nunca a la landing', () => {
+    render(<NavDashboard restauranteID="r-1" actual="configuracion" />);
+
+    const marca = screen.getByRole('link', { name: /SmartTable/ });
+    expect(marca).toHaveAttribute('href', '/dashboard/r-1');
+  });
+
+  it('la marca conserva la sucursal activa', () => {
+    useSearchParamsMock.get.mockReturnValue('s-2');
+    render(
+      <SucursalesProvider
+        sucursales={[
+          { id: 's-1', nombre: 'Sucursal 1' },
+          { id: 's-2', nombre: 'Sucursal 2' },
+        ]}
+      >
+        <NavDashboard restauranteID="r-1" actual="configuracion" />
+      </SucursalesProvider>
+    );
+
+    expect(screen.getByRole('link', { name: /SmartTable/ })).toHaveAttribute(
+      'href',
+      '/dashboard/r-1?sucursal=s-2'
+    );
+  });
+
+  it('en el tablero la marca no es un link', () => {
+    render(
+      <TemaProvider
+        tema={{
+          nombre: 'Parrilla Don Pedro',
+          logoUrl: '/logo-don-pedro.png',
+          colorPrimario: '#7c3aed',
+          colorSecundario: '#0f172a',
+        }}
+      >
+        <NavDashboard restauranteID="r-1" actual="tablero" />
+      </TemaProvider>
+    );
+
+    expect(screen.queryByRole('link', { name: /Parrilla Don Pedro/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Parrilla Don Pedro')).toBeInTheDocument();
+  });
 });

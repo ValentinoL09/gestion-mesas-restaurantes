@@ -44,15 +44,35 @@ export default function NavDashboard({
       activo ? 'bg-[var(--t-primario)] text-white' : 'text-gray-600 hover:bg-gray-200'
     }`;
 
+  // La marca del restaurante nunca sale del restaurante: desde cualquier
+  // sección vuelve a las mesas. `w-auto` + `max-w` evitan que un logo
+  // panorámico desborde el nav, y el nombre se recorta en vez de empujar
+  // los links de sección.
+  const marca = (
+    <>
+      {tema.logoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={tema.logoUrl}
+          alt={tema.nombre}
+          className="h-10 sm:h-12 w-auto max-w-[10rem] rounded-lg object-contain shrink-0"
+        />
+      )}
+      <span className="min-w-0 max-w-[9rem] sm:max-w-[14rem] truncate text-xl font-black tracking-tighter text-gray-900">
+        {tema.nombre}
+      </span>
+    </>
+  );
+
   return (
     <nav className="w-full flex items-center gap-1 bg-white border-b border-gray-200 px-6 py-3 print:hidden shadow-sm">
-      <Link href="/" className="flex items-center gap-2.5 mr-6">
-        {tema.logoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={tema.logoUrl} alt={tema.nombre} className="h-22 sm:h-28 rounded-lg object-contain" />
-        )}
-        <span className="text-xl font-black tracking-tighter text-gray-900">{tema.nombre}</span>
-      </Link>
+      {actual === 'tablero' ? (
+        <div className="flex items-center gap-2.5 mr-6">{marca}</div>
+      ) : (
+        <Link href={conSucursal(`/dashboard/${restauranteID}`)} className="flex items-center gap-2.5 mr-6">
+          {marca}
+        </Link>
+      )}
       {RUTAS.map((ruta) => (
         <Link
           key={ruta.clave}
