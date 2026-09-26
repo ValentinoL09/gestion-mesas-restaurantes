@@ -237,7 +237,7 @@ export default function PantallaComensal({
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-3">
             {tema.logoUrl ? (
-              <span className="flex h-24 sm:h-28 w-56 sm:w-64 items-center justify-center">
+              <span className="flex h-28 sm:h-32 w-64 items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={tema.logoUrl} alt={tema.nombre} className="max-h-full max-w-full rounded-xl object-contain" />
               </span>

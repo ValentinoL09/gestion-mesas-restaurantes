@@ -52,12 +52,12 @@ export default function NavDashboard({
   const marca = (
     <>
       {tema.logoUrl && (
-        <span className="flex h-14 sm:h-16 w-28 sm:w-40 shrink-0 items-center justify-center">
+        <span className="flex h-24 sm:h-28 w-32 sm:w-44 shrink-0 items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={tema.logoUrl} alt="" className="max-h-full max-w-full rounded-lg object-contain" />
         </span>
       )}
-      <span className="min-w-0 max-w-[12rem] sm:max-w-[16rem] truncate text-xl sm:text-2xl font-black tracking-tighter text-gray-900">
+      <span className="min-w-0 max-w-[12rem] sm:max-w-[16rem] truncate text-2xl sm:text-3xl font-black tracking-tighter text-gray-900">
         {tema.nombre}
       </span>
     </>

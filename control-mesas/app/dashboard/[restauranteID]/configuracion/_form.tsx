@@ -149,7 +149,7 @@ export default function FormConfiguracion({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Logo del local</label>
             <div className="flex items-center gap-4">
-              <span className="flex h-24 sm:h-28 w-48 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white">
+              <span className="flex h-28 sm:h-32 w-56 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={logoVisto} alt="Logo del restaurante" className="max-h-full max-w-full object-contain" />
               </span>
